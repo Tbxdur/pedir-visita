@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manitas de Confianza — Pedir visita</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#23262B;
+    --paper:#ECE6D8;
+    --paper-dark:#DCD3BE;
+    --amber:#E3A008;
+    --amber-dark:#B87F04;
+    --rust:#B4402C;
+    --steel:#5C6670;
+    --pine:#2F5233;
+    --white:#FBF9F4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:640px;margin:0 auto;min-height:100vh;background:var(--paper);}
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;background:var(--ink);color:var(--white);
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand svg{flex:none;}
+  .brand-name{font-family:'Oswald',sans-serif;font-weight:600;font-size:1.05rem;letter-spacing:.02em;line-height:1.1;}
+  .brand-sub{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--amber);letter-spacing:.08em;}
+  .view-toggle{display:flex;background:#33373d;border-radius:8px;padding:3px;gap:2px;}
+  .view-toggle button{
+    border:none;background:transparent;color:#c9cdd3;font-family:'Inter',sans-serif;
+    font-size:.75rem;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;
+  }
+  .view-toggle button.active{background:var(--amber);color:var(--ink);}
+
+  main{padding:22px 18px 60px;}
+
+  /* ---------- ticket card ---------- */
+  .ticket-card{
+    background:var(--white);
+    border-radius:2px;
+    box-shadow:0 1px 0 rgba(35,38,43,.05), 0 8px 24px rgba(35,38,43,.08);
+    position:relative;
+    overflow:hidden;
+  }
+  .perforation{
+    height:14px;
+    background-image:radial-gradient(circle, var(--paper) 3px, transparent 3.2px);
+    background-size:16px 16px;
+    background-position:6px -8px;
+    background-color:var(--ink);
+  }
+  .ticket-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding:18px 20px 14px;border-bottom:2px dashed var(--paper-dark);
+  }
+  .ticket-label{font-family:'Oswald',sans-serif;font-weight:600;font-size:.95rem;letter-spacing:.06em;color:var(--steel);}
+  .ticket-number{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.9rem;color:var(--rust);}
+
+  form{padding:6px 20px 22px;}
+  .step{margin-top:22px;}
+  .step-label{
+    display:flex;align-items:center;gap:8px;
+    font-family:'Oswald',sans-serif;font-weight:600;font-size:.98rem;
+    margin-bottom:10px;color:var(--ink);
+  }
+  .step-num{
+    width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--white);
+    font-family:'IBM Plex Mono',monospace;font-size:.7rem;display:flex;align-items:center;justify-content:center;flex:none;
+  }
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    border:1.5px solid var(--paper-dark);background:var(--paper);
+    padding:9px 14px;border-radius:20px;font-size:.88rem;font-weight:600;
+    cursor:pointer;color:var(--ink);transition:.12s;
+  }
+  .chip:hover{border-color:var(--amber-dark);}
+  .chip.active{background:var(--ink);color:var(--white);border-color:var(--ink);}
+  .chip.urgent.active{background:var(--rust);border-color:var(--rust);}
+
+  textarea, input[type=text], input[type=tel]{
+    width:100%;border:1.5px solid var(--paper-dark);border-radius:8px;
+    padding:12px 13px;font-family:'Inter',sans-serif;font-size:.95rem;background:var(--white);
+    color:var(--ink);
+  }
+  textarea{min-height:78px;resize:vertical;}
+  textarea:focus,input:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber-dark);}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:.78rem;color:var(--steel);margin-bottom:5px;font-weight:600;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:420px){.grid2{grid-template-columns:1fr;}}
+
+  .photo-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .photo-add{
+    width:64px;height:64px;border:2px dashed var(--paper-dark);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--steel);
+    font-size:1.6rem;background:var(--paper);
+  }
+  .thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:1.5px solid var(--paper-dark);}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb button{
+    position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;
+    background:var(--rust);color:#fff;border:none;font-size:.7rem;line-height:1;cursor:pointer;
+  }
+  .hint{font-size:.76rem;color:var(--steel);margin-top:6px;}
+
+  .estimate-box{
+    margin-top:24px;background:var(--paper);border:1.5px solid var(--paper-dark);
+    border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .estimate-box .lbl{font-size:.8rem;color:var(--steel);font-weight:600;}
+  .estimate-box .val{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:1.15rem;color:var(--pine);}
+
+  .submit-btn{
+    width:100%;margin-top:20px;padding:15px;border:none;border-radius:10px;
+    background:var(--amber);color:var(--ink);font-family:'Oswald',sans-serif;
+    font-weight:600;font-size:1.02rem;letter-spacing:.02em;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+  }
+  .submit-btn:active{background:var(--amber-dark);}
+  .error-msg{color:var(--rust);font-size:.8rem;margin-top:6px;font-weight:600;}
+
+  /* ---------- confirmation ---------- */
+  .confirm{padding:8px 20px 24px;}
+  .confirm-badge{
+    display:inline-flex;align-items:center;gap:8px;background:#eaf1ea;color:var(--pine);
+    padding:8px 14px;border-radius:20px;font-weight:700;font-size:.85rem;margin-bottom:14px;
+  }
+  .confirm h3{font-family:'Oswald',sans-serif;margin:0 0 6px;}
+  .confirm p{color:var(--steel);font-size:.92rem;line-height:1.5;}
+  .wa-link{
+    display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:11px 16px;
+    background:#25D366;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:.9rem;
+  }
+  .photo-download{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .photo-download a{display:block;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1.5px solid var(--paper-dark);}
+  .photo-download img{width:100%;height:100%;object-fit:cover;}
+  .new-order-btn{
+    margin-top:18px;background:none;border:1.5px solid var(--ink);color:var(--ink);
+    padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
+  }
+
+  /* ---------- tech view ---------- */
+  .call-panel{background:var(--white);border:1.5px solid var(--amber-dark);border-radius:10px;padding:16px;}
+  .call-panel-title{font-family:'Oswald',sans-serif;font-weight:600;font-size:1rem;}
+  .call-panel-sub{color:var(--steel);font-size:.85rem;margin-top:2px;margin-bottom:4px;}
+  #techView h2{font-family:'Oswald',sans-serif;font-size:1.1rem;margin:0 0 4px;}
+  #techView .sub{color:var(--steel);font-size:.85rem;margin-bottom:18px;}
+  .order-card{
+    background:var(--white);border:1.5px solid var(--paper-dark);border-radius:10px;
+    padding:14px 16px;margin-bottom:12px;
+  }
+  .order-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .order-cat{
+    display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:12px;
+    background:var(--paper);color:var(--ink);text-transform:uppercase;letter-spacing:.03em;
+  }
+  .order-id{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--steel);}
+  .order-name{font-weight:700;margin-top:8px;}
+  .order-meta{font-size:.85rem;color:var(--steel);margin-top:2px;}
+  .order-desc{font-size:.88rem;margin-top:8px;line-height:1.4;}
+  .order-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px;flex-wrap:wrap;}
+  select.status{
+    border:1.5px solid var(--paper-dark);border-radius:6px;padding:6px 8px;font-size:.8rem;font-weight:600;
+    font-family:'Inter',sans-serif;background:var(--paper);
+  }
+  .wa-mini{
+    background:#25D366;color:#fff;text-decoration:none;padding:7px 12px;border-radius:6px;
+    font-size:.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;
+  }
+  .empty-state{text-align:center;color:var(--steel);padding:40px 10px;font-size:.9rem;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a4 4 0 00-5.4 4.9L3 17.5V21h3.5l6.3-6.3a4 4 0 004.9-5.4l-2.6 2.6-2-2 2.6-2.6z" stroke="#E3A008" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <div>
+        <div class="brand-name">Manitas de Confianza</div>
+        <div class="brand-sub">OFICIOS · A DOMICILIO</div>
+      </div>
+    </div>
+    <div class="view-toggle">
+      <button id="btnClientView" class="active" onclick="showView('client')">Cliente</button>
+      <button id="btnTechView" onclick="showView('tech')">Técnico</button>
+    </div>
+  </div>
+
+  <main id="clientView">
+    <div class="ticket-card">
+      <div class="perforation"></div>
+      <div class="ticket-head">
+        <div class="ticket-label">ORDEN DE TRABAJO</div>
+        <div class="ticket-number" id="ticketNumberDisplay">Nº ----</div>
+      </div>
+
+      <form id="orderForm">
+        <div class="step">
+          <div class="step-label"><span class="step-num">1</span> ¿Qué problema tienes?</div>
+          <div class="chips" id="categoryChips"></div>
+        </div>
+
+        <div class="step">
+          <div class="step-label"><span class="step-num">2</span> Cuéntanos un poco más</div>
+          <textarea id="description" placeholder="Ej: la persiana del salón no sube, se ha quedado atascada a media altura..."></textarea>
+        </div>
+
+        <div class="step">
+          <div class="step-label"><span class="step-num">3</span> Fotos (opcional, ayuda mucho)</div>
+          <div class="photo-row" id="photoRow">
+            <label class="photo-add" for="photoInput">+</label>
+            <input type="file" id="photoInput" accept="image/*" multiple capture="environment" style="display:none">
+          </div>
+          <div class="hint">Máximo 3 fotos.</div>
+        </div>
+
+        <div class="step">
+          <div class="step-label"><span class="step-num">4</span> Tus datos</div>
+          <div class="field"><label>Nombre y apellidos</label><input type="text" id="name" placeholder="María García"></div>
+          <div class="grid2">
+            <div class="field"><label>Teléfono</label><input type="tel" id="phone" placeholder="600 123 456"></div>
+            <div class="field"><label>Población</label><input type="text" id="town" placeholder="Ripollet"></div>
+          </div>
+          <div class="field"><label>Dirección</label><input type="text" id="address" placeholder="Calle, número, piso"></div>
+        </div>
+
+        <div class="step">
+          <div class="step-label"><span class="step-num">5</span> ¿Cuándo puedes recibir al técnico?</div>
+          <div class="chips" id="availabilityChips">
+            <div class="chip" data-value="Mañana (9h-14h)">Mañana</div>
+            <div class="chip" data-value="Tarde (16h-20h)">Tarde</div>
+            <div class="chip urgent" data-value="Urgente, lo antes posible">Urgente</div>
+          </div>
+        </div>
+
+        <div id="formError" class="error-msg" hidden></div>
+
+        <button type="submit" class="submit-btn">Enviar petición por WhatsApp</button>
+      </form>
+
+      <div class="confirm" id="confirmBox" hidden></div>
+    </div>
+  </main>
+
+  <main id="techView" hidden>
+    <div class="call-panel">
+      <div class="call-panel-title">📞 Acaba de llamar un cliente</div>
+      <div class="call-panel-sub">Escribe su teléfono y mándale el enlace para que rellene la petición.</div>
+      <div class="grid2" style="margin-top:10px;">
+        <div class="field"><label>Teléfono del cliente</label><input type="tel" id="callPhone" placeholder="600 123 456"></div>
+        <div class="field"><label>Nombre (si lo sabe)</label><input type="text" id="callName" placeholder="Opcional"></div>
+      </div>
+      <button type="button" class="submit-btn" style="margin-top:4px;" onclick="sendClientLink()">Generar enlace y enviar por WhatsApp</button>
+      <div class="hint" id="linkHint" style="margin-top:8px;"></div>
+    </div>
+
+    <h2 style="margin-top:26px;">Peticiones recibidas</h2>
+    <div class="sub">Se actualiza con cada nueva orden enviada.</div>
+    <div id="ordersList"></div>
+  </main>
+</div>
+
+<script>
+const CONFIG = {
+  whatsappNumber: '34600000000', // ← número de WhatsApp del técnico, en formato internacional sin '+'
+  categories: [
+    { id:'persiana',    label:'Persiana',     min:40,  max:80  },
+    { id:'cerrajeria',  label:'Cerrajería',   min:60,  max:120 },
+    { id:'electricidad',label:'Electricidad', min:50,  max:100 },
+    { id:'fontaneria',  label:'Fontanería',   min:50,  max:100 },
+    { id:'otros',       label:'Otros',        min:40,  max:90  }
+  ]
+};
+
+const state = { category:null, availability:null, photos:[] };
+
+function $(id){ return document.getElementById(id); }
+
+// ---------- render category chips ----------
+const catWrap = $('categoryChips');
+CONFIG.categories.forEach(c=>{
+  const el = document.createElement('div');
+  el.className='chip'; el.textContent=c.label; el.dataset.id=c.id;
+  el.onclick=()=>{
+    document.querySelectorAll('#categoryChips .chip').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active'); state.category=c;
+  };
+  catWrap.appendChild(el);
+});
+
+document.querySelectorAll('#availabilityChips .chip').forEach(el=>{
+  el.onclick=()=>{
+    document.querySelectorAll('#availabilityChips .chip').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active'); state.availability = el.dataset.value;
+  };
+});
+
+// ---------- photos ----------
+$('photoInput').addEventListener('change', (e)=>{
+  const files = Array.from(e.target.files).slice(0, 3 - state.photos.length);
+  files.forEach(file=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        const scale = Math.min(1, 800/img.width);
+        canvas.width = img.width*scale; canvas.height = img.height*scale;
+        canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+        state.photos.push(dataUrl);
+        renderPhotos();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+
+function renderPhotos(){
+  const row = $('photoRow');
+  row.querySelectorAll('.thumb').forEach(t=>t.remove());
+  state.photos.forEach((src, i)=>{
+    const div = document.createElement('div');
+    div.className='thumb';
+    div.innerHTML = `<img src="${src}"><button type="button" onclick="removePhoto(${i})">×</button>`;
+    row.insertBefore(div, row.firstChild);
+  });
+  $('photoInput').closest ? null : null;
+  const addBtn = row.querySelector('.photo-add');
+  if(addBtn) addBtn.style.display = state.photos.length>=3 ? 'none' : 'flex';
+}
+function removePhoto(i){ state.photos.splice(i,1); renderPhotos(); }
+
+// ---------- ticket number ----------
+function makeTicketId(){
+  const d = new Date();
+  const stamp = `${d.getFullYear().toString().slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  const rand = Math.floor(100+Math.random()*900);
+  return `${stamp}-${rand}`;
+}
+const urlParams = new URLSearchParams(window.location.search);
+const currentTicket = urlParams.get('ticket') || makeTicketId();
+$('ticketNumberDisplay').textContent = 'Nº ' + currentTicket;
+if(urlParams.get('phone')) $('phone').value = urlParams.get('phone');
+if(urlParams.get('name')) $('name').value = decodeURIComponent(urlParams.get('name'));
+
+// ---------- phone normalizer ----------
+function normalizePhone(raw){
+  let p = raw.replace(/[^0-9+]/g,'');
+  if(p.startsWith('+')) return p.slice(1);
+  if(p.startsWith('34')) return p;
+  if(p.length===9) return '34'+p;
+  return p;
+}
+
+// ---------- storage helpers ----------
+async function loadOrders(){
+  try{
+    const res = await window.storage.get('workorders', true);
+    return res ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function saveOrders(orders){
+  try{
+    await window.storage.set('workorders', JSON.stringify(orders.slice(-50)), true);
+  }catch(e){ console.error('No se pudo guardar la orden', e); }
+}
+
+// ---------- submit ----------
+$('orderForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const description = $('description').value.trim();
+  const name = $('name').value.trim();
+  const phone = $('phone').value.trim();
+  const town = $('town').value.trim();
+  const address = $('address').value.trim();
+  const errBox = $('formError');
+
+  if(!state.category || !description || !name || !phone || !address || !state.availability){
+    errBox.textContent = 'Faltan datos: revisa que hayas elegido el problema, escrito una descripción, y rellenado nombre, teléfono, dirección y disponibilidad.';
+    errBox.hidden = false;
+    return;
+  }
+  errBox.hidden = true;
+
+  let {min,max} = state.category;
+  const urgent = document.querySelector('#availabilityChips .chip.urgent.active');
+  if(urgent){ min=Math.round(min*1.25); max=Math.round(max*1.25); }
+
+  const order = {
+    id: currentTicket,
+    category: state.category.label,
+    description, name, phone, town, address,
+    availability: state.availability,
+    photos: state.photos,
+    estimateMin: min, estimateMax: max,
+    status: 'pendiente',
+    createdAt: new Date().toISOString()
+  };
+
+  const orders = await loadOrders();
+  orders.push(order);
+  await saveOrders(orders);
+
+  const msgLines = [
+    `*Nueva petición Nº ${order.id}*`,
+    `Problema: ${order.category}`,
+    `Descripción: ${description}`,
+    `Cliente: ${name}`,
+    `Teléfono: ${phone}`,
+    `Dirección: ${address}${town ? ', '+town : ''}`,
+    `Disponibilidad: ${order.availability}`,
+    `Presupuesto orientativo: ${min}€ - ${max}€`,
+    state.photos.length ? `(${state.photos.length} foto/s adjuntadas — recuerda enviarlas también en el chat)` : ''
+  ].filter(Boolean);
+  const text = encodeURIComponent(msgLines.join('\n'));
+  const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${text}`;
+
+  $('orderForm').hidden = true;
+  const confirmBox = $('confirmBox');
+  confirmBox.hidden = false;
+  confirmBox.innerHTML = `
+    <div class="confirm-badge">✓ Petición Nº ${order.id} registrada</div>
+    <h3>¡Listo, ${name}!</h3>
+    <p>Hemos preparado tu mensaje para el técnico con todos los datos y el presupuesto orientativo (${min}€ - ${max}€). Pulsa el botón para abrirlo en WhatsApp y enviarlo.</p>
+    <a class="wa-link" href="${waUrl}" target="_blank" rel="noopener">Abrir WhatsApp y enviar</a>
+    ${state.photos.length ? `<p style="margin-top:14px;">Adjunta también estas fotos en la conversación de WhatsApp:</p>
+    <div class="photo-download">${state.photos.map(p=>`<a href="${p}" download="foto-${order.id}.jpg"><img src="${p}"></a>`).join('')}</div>` : ''}
+    <br><button class="new-order-btn" onclick="location.reload()">Hacer otra petición</button>
+  `;
+  window.open(waUrl, '_blank');
+});
+
+// ---------- generar y enviar enlace tras la llamada ----------
+function sendClientLink(){
+  const phone = $('callPhone').value.trim();
+  const name = $('callName').value.trim();
+  const hint = $('linkHint');
+  if(!phone){
+    hint.style.color = 'var(--rust)';
+    hint.textContent = 'Escribe el teléfono del cliente primero.';
+    return;
+  }
+  const ticketId = makeTicketId();
+  const base = window.location.origin + window.location.pathname;
+  let clientUrl = `${base}?ticket=${ticketId}&phone=${encodeURIComponent(phone)}`;
+  if(name) clientUrl += `&name=${encodeURIComponent(name)}`;
+
+  const msg = `Hola${name ? ' '+name : ''}, gracias por tu llamada. Para prepararte el presupuesto, rellena estos datos rápidos aquí: ${clientUrl}`;
+  const waUrl = `https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(msg)}`;
+  window.open(waUrl, '_blank');
+
+  hint.style.color = 'var(--pine)';
+  hint.textContent = `Enlace generado (Nº ${ticketId}) y WhatsApp abierto para enviarlo.`;
+}
+
+// ---------- view toggle ----------
+function showView(view){
+  $('clientView').hidden = view!=='client';
+  $('techView').hidden = view!=='tech';
+  $('btnClientView').classList.toggle('active', view==='client');
+  $('btnTechView').classList.toggle('active', view==='tech');
+  if(view==='tech') renderTechView();
+}
+
+async function renderTechView(){
+  const list = $('ordersList');
+  list.innerHTML = '<div class="empty-state">Cargando...</div>';
+  const orders = await loadOrders();
+  if(!orders.length){
+    list.innerHTML = '<div class="empty-state">Aún no ha llegado ninguna petición.<br>Prueba a enviar una desde la vista "Cliente".</div>';
+    return;
+  }
+  list.innerHTML = '';
+  orders.slice().reverse().forEach(o=>{
+    const waText = encodeURIComponent(`Hola ${o.name}, te escribo por tu petición Nº ${o.id} (${o.category}). Te confirmo presupuesto y horario de visita.`);
+    const waUrl = `https://wa.me/${normalizePhone(o.phone)}?text=${waText}`;
+    const card = document.createElement('div');
+    card.className='order-card';
+    card.innerHTML = `
+      <div class="order-card-top">
+        <div>
+          <span class="order-cat">${o.category}</span>
+          <div class="order-name">${o.name}</div>
+        </div>
+        <div class="order-id">Nº ${o.id}</div>
+      </div>
+      <div class="order-meta">${o.phone} · ${o.address}${o.town? ', '+o.town:''}</div>
+      <div class="order-meta">Disponibilidad: ${o.availability}</div>
+      <div class="order-desc">${o.description}</div>
+      <div class="order-meta" style="margin-top:6px;">Presupuesto orientativo: <strong>${o.estimateMin}€ - ${o.estimateMax}€</strong></div>
+      <div class="order-bottom">
+        <select class="status" data-id="${o.id}">
+          <option value="pendiente" ${o.status==='pendiente'?'selected':''}>Pendiente</option>
+          <option value="presupuestado" ${o.status==='presupuestado'?'selected':''}>Presupuestado</option>
+          <option value="en_curso" ${o.status==='en_curso'?'selected':''}>En curso</option>
+          <option value="hecho" ${o.status==='hecho'?'selected':''}>Hecho</option>
+        </select>
+        <a class="wa-mini" href="${waUrl}" target="_blank" rel="noopener">Contactar por WhatsApp</a>
+      </div>
+    `;
+    card.querySelector('select').addEventListener('change', async (e)=>{
+      const orders2 = await loadOrders();
+      const idx = orders2.findIndex(x=>x.id===o.id);
+      if(idx>-1){ orders2[idx].status = e.target.value; await saveOrders(orders2); }
+    });
+    list.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
