@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manitas de Confianza — Pedir visita</title> 
+<title>Manitas de Confianza — Pedir visita</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -399,9 +399,9 @@ $('orderForm').addEventListener('submit', async (e)=>{
   }
   errBox.hidden = true;
 
-  
-  
-  
+  let {min,max} = state.category;
+  const urgent = document.querySelector('#availabilityChips .chip.urgent.active');
+  if(urgent){ min=Math.round(min*1.25); max=Math.round(max*1.25); }
 
   const order = {
     id: currentTicket,
@@ -409,7 +409,7 @@ $('orderForm').addEventListener('submit', async (e)=>{
     description, name, phone, town, address,
     availability: state.availability,
     photos: state.photos,
-    
+    estimateMin: min, estimateMax: max,
     status: 'pendiente',
     createdAt: new Date().toISOString()
   };
@@ -426,7 +426,7 @@ $('orderForm').addEventListener('submit', async (e)=>{
     `Teléfono: ${phone}`,
     `Dirección: ${address}${town ? ', '+town : ''}`,
     `Disponibilidad: ${order.availability}`,
-    
+    `Presupuesto orientativo: ${min}€ - ${max}€`,
     state.photos.length ? `(${state.photos.length} foto/s adjuntadas — recuerda enviarlas también en el chat)` : ''
   ].filter(Boolean);
   const text = encodeURIComponent(msgLines.join('\n'));
@@ -437,8 +437,8 @@ $('orderForm').addEventListener('submit', async (e)=>{
   confirmBox.hidden = false;
   confirmBox.innerHTML = `
     <div class="confirm-badge">✓ Petición Nº ${order.id} registrada</div>
-    <h3>¡Gracias, ${name}!</h3>
-    <p>Hemos recibido tu petición. Pulsa el botón para enviárnosla por WhatsApp y en breve nos pondremos en contacto contigo para confirmar presupuesto y horario de visita.</p>
+    <h3>¡Listo, ${name}!</h3>
+    <p>Hemos preparado tu mensaje para el técnico con todos los datos y el presupuesto orientativo (${min}€ - ${max}€). Pulsa el botón para abrirlo en WhatsApp y enviarlo.</p>
     <a class="wa-link" href="${waUrl}" target="_blank" rel="noopener">Abrir WhatsApp y enviar</a>
     ${state.photos.length ? `<p style="margin-top:14px;">Adjunta también estas fotos en la conversación de WhatsApp:</p>
     <div class="photo-download">${state.photos.map(p=>`<a href="${p}" download="foto-${order.id}.jpg"><img src="${p}"></a>`).join('')}</div>` : ''}
@@ -504,7 +504,7 @@ async function renderTechView(){
       <div class="order-meta">${o.phone} · ${o.address}${o.town? ', '+o.town:''}</div>
       <div class="order-meta">Disponibilidad: ${o.availability}</div>
       <div class="order-desc">${o.description}</div>
-      
+      <div class="order-meta" style="margin-top:6px;">Presupuesto orientativo: <strong>${o.estimateMin}€ - ${o.estimateMax}€</strong></div>
       <div class="order-bottom">
         <select class="status" data-id="${o.id}">
           <option value="pendiente" ${o.status==='pendiente'?'selected':''}>Pendiente</option>
