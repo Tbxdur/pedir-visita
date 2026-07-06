@@ -286,6 +286,7 @@
 <script>
 const CONFIG = {
   whatsappNumber: '34607457051', // ← número de WhatsApp del técnico, en formato internacional sin '+'
+  sheetEndpoint: 'https://script.google.com/macros/s/AKfycbzUkFcxo65GH0mvE3btU072dYefZwOnveu-C4q5hxgLg82bsiLIhtv7FUO0MQ9fjfRa/exec',
   categories: [
     { id:'persiana',    label:'Persiana',     min:40,  max:80  },
     { id:'cerrajeria',  label:'Cerrajería',   min:60,  max:120 },
@@ -421,6 +422,8 @@ async function saveOrders(orders){
 }
 
 // ---------- submit ----------
+const submitBtn = document.querySelector('#orderForm .submit-btn');
+
 $('orderForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
   const description = $('description').value.trim();
@@ -437,38 +440,32 @@ $('orderForm').addEventListener('submit', async (e)=>{
   }
   errBox.hidden = true;
 
-  
-  
-  
-
   const order = {
     id: currentTicket,
     category: state.category.label,
     description, name, phone, town, address,
     availability: state.availability,
-    photos: state.photos,
-    
-    status: 'pendiente',
-    createdAt: new Date().toISOString()
+    photosCount: state.photos.length
   };
 
-  const orders = await loadOrders();
-  orders.push(order);
-  await saveOrders(orders);
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Enviando...';
 
-  const msgLines = [
-    `*Nueva petición Nº ${order.id}*`,
-    `Problema: ${order.category}`,
-    `Descripción: ${description}`,
-    `Cliente: ${name}`,
-    `Teléfono: ${phone}`,
-    `Dirección: ${address}${town ? ', '+town : ''}`,
-    `Disponibilidad: ${order.availability}`,
-    
-    state.photos.length ? `(${state.photos.length} foto/s adjuntadas — recuerda enviarlas también en el chat)` : ''
-  ].filter(Boolean);
-  const text = encodeURIComponent(msgLines.join('\n'));
-  const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${text}`;
+  try{
+    await fetch(CONFIG.sheetEndpoint, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(order)
+    });
+  }catch(err){
+    console.error('No se pudo enviar la petición', err);
+    errBox.textContent = 'No se ha podido enviar la petición. Comprueba tu conexión e inténtalo de nuevo.';
+    errBox.hidden = false;
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Enviar petición';
+    return;
+  }
 
   $('orderForm').hidden = true;
   const confirmBox = $('confirmBox');
@@ -476,13 +473,9 @@ $('orderForm').addEventListener('submit', async (e)=>{
   confirmBox.innerHTML = `
     <div class="confirm-badge">✓ Petición Nº ${order.id} registrada</div>
     <h3>¡Gracias, ${name}!</h3>
-    <p>Hemos recibido tu petición. Pulsa el botón para enviárnosla por WhatsApp y en breve nos pondremos en contacto contigo para confirmar presupuesto y horario de visita.</p>
-    <a class="wa-link" href="${waUrl}" target="_blank" rel="noopener">Abrir WhatsApp y enviar</a>
-    ${state.photos.length ? `<p style="margin-top:14px;">Adjunta también estas fotos en la conversación de WhatsApp:</p>
-    <div class="photo-download">${state.photos.map(p=>`<a href="${p}" download="foto-${order.id}.jpg"><img src="${p}"></a>`).join('')}</div>` : ''}
+    <p>Hemos recibido tu petición y en breve nos pondremos en contacto contigo para confirmar presupuesto, posibles detalles extras y horario de visita.</p>
     <br><button class="new-order-btn" onclick="location.reload()">Hacer otra petición</button>
   `;
-  window.open(waUrl, '_blank');
 });
 
 // ---------- generar y enviar enlace tras la llamada ----------
