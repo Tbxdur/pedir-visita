@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manitas de Confianza — Pedir visita</title>
+<title>Manitas de Confianza — Pedir visita</title> 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -91,13 +91,17 @@
   .chip.active{background:var(--ink);color:var(--white);border-color:var(--ink);}
   .chip.urgent.active{background:var(--rust);border-color:var(--rust);}
 
-  textarea, input[type=text], input[type=tel]{
+  textarea, input[type=text], input[type=tel], input[type=date], #visitTime{
     width:100%;border:1.5px solid var(--paper-dark);border-radius:8px;
     padding:12px 13px;font-family:'Inter',sans-serif;font-size:.95rem;background:var(--white);
     color:var(--ink);
   }
   textarea{min-height:78px;resize:vertical;}
-  textarea:focus,input:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber-dark);}
+  textarea:focus,input:focus,#visitTime:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber-dark);}
+  .weekend-note{
+    margin-top:8px;background:#FBF1E2;border:1.5px solid var(--amber-dark);color:var(--amber-dark);
+    border-radius:8px;padding:9px 12px;font-size:.8rem;font-weight:600;
+  }
   .field{margin-bottom:12px;}
   .field label{display:block;font-size:.78rem;color:var(--steel);margin-bottom:5px;font-weight:600;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -196,7 +200,7 @@
     </div>
     <div class="view-toggle">
       <button id="btnClientView" class="active" onclick="showView('client')">Cliente</button>
-      <button id="btnTechView" onclick="showView('tech')">Técnico</button>
+      <button id="btnTechView" onclick="showView('tech')" style="display:none">Técnico</button>
     </div>
   </div>
 
@@ -240,11 +244,16 @@
 
         <div class="step">
           <div class="step-label"><span class="step-num">5</span> ¿Cuándo puedes recibir al técnico?</div>
-          <div class="chips" id="availabilityChips">
-            <div class="chip" data-value="Mañana (9h-14h)">Mañana</div>
-            <div class="chip" data-value="Tarde (16h-20h)">Tarde</div>
-            <div class="chip urgent" data-value="Urgente, lo antes posible">Urgente</div>
+          <div class="grid2">
+            <div class="field"><label>Día</label><input type="date" id="visitDate"></div>
+            <div class="field"><label>Hora</label>
+              <select id="visitTime">
+                <option value="" disabled selected>Elige una hora</option>
+              </select>
+            </div>
           </div>
+          <div class="hint">Horario laboral: lunes a viernes de 8:00 a 18:00.</div>
+          <div class="weekend-note" id="weekendNote" hidden>⚠ Fin de semana seleccionado: puede aplicar un cargo extra sobre el presupuesto.</div>
         </div>
 
         <div id="formError" class="error-msg" hidden></div>
@@ -302,12 +311,41 @@ CONFIG.categories.forEach(c=>{
   catWrap.appendChild(el);
 });
 
-document.querySelectorAll('#availabilityChips .chip').forEach(el=>{
-  el.onclick=()=>{
-    document.querySelectorAll('#availabilityChips .chip').forEach(x=>x.classList.remove('active'));
-    el.classList.add('active'); state.availability = el.dataset.value;
-  };
-});
+// ---------- availability (día y hora) ----------
+const visitDateEl = $('visitDate');
+const visitTimeEl = $('visitTime');
+const weekendNoteEl = $('weekendNote');
+
+(function populateTimeOptions(){
+  for(let h=8; h<18; h++){
+    ['00','30'].forEach(m=>{
+      const val = `${String(h).padStart(2,'0')}:${m}`;
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = val;
+      visitTimeEl.appendChild(opt);
+    });
+  }
+})();
+
+visitDateEl.min = new Date().toISOString().split('T')[0];
+
+function updateAvailability(){
+  if(visitDateEl.value && visitTimeEl.value){
+    const [y, m, d] = visitDateEl.value.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    const dayNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const isWeekend = dateObj.getDay()===0 || dateObj.getDay()===6;
+    weekendNoteEl.hidden = !isWeekend;
+    const niceDate = `${dayNames[dateObj.getDay()]} ${d} de ${monthNames[m-1]} de ${y}`;
+    state.availability = `${niceDate} a las ${visitTimeEl.value}` + (isWeekend ? ' (fin de semana, posible cargo extra)' : '');
+  } else {
+    state.availability = null;
+    weekendNoteEl.hidden = true;
+  }
+}
+visitDateEl.addEventListener('change', updateAvailability);
+visitTimeEl.addEventListener('change', updateAvailability);
 
 // ---------- photos ----------
 $('photoInput').addEventListener('change', (e)=>{
@@ -393,15 +431,15 @@ $('orderForm').addEventListener('submit', async (e)=>{
   const errBox = $('formError');
 
   if(!state.category || !description || !name || !phone || !address || !state.availability){
-    errBox.textContent = 'Faltan datos: revisa que hayas elegido el problema, escrito una descripción, y rellenado nombre, teléfono, dirección y disponibilidad.';
+    errBox.textContent = 'Faltan datos: revisa que hayas elegido el problema, escrito una descripción, y rellenado nombre, teléfono, dirección, y el día y hora de la visita.';
     errBox.hidden = false;
     return;
   }
   errBox.hidden = true;
 
-  let {min,max} = state.category;
-  const urgent = document.querySelector('#availabilityChips .chip.urgent.active');
-  if(urgent){ min=Math.round(min*1.25); max=Math.round(max*1.25); }
+  
+  
+  
 
   const order = {
     id: currentTicket,
@@ -409,7 +447,7 @@ $('orderForm').addEventListener('submit', async (e)=>{
     description, name, phone, town, address,
     availability: state.availability,
     photos: state.photos,
-    estimateMin: min, estimateMax: max,
+    
     status: 'pendiente',
     createdAt: new Date().toISOString()
   };
@@ -426,7 +464,7 @@ $('orderForm').addEventListener('submit', async (e)=>{
     `Teléfono: ${phone}`,
     `Dirección: ${address}${town ? ', '+town : ''}`,
     `Disponibilidad: ${order.availability}`,
-    `Presupuesto orientativo: ${min}€ - ${max}€`,
+    
     state.photos.length ? `(${state.photos.length} foto/s adjuntadas — recuerda enviarlas también en el chat)` : ''
   ].filter(Boolean);
   const text = encodeURIComponent(msgLines.join('\n'));
@@ -437,8 +475,8 @@ $('orderForm').addEventListener('submit', async (e)=>{
   confirmBox.hidden = false;
   confirmBox.innerHTML = `
     <div class="confirm-badge">✓ Petición Nº ${order.id} registrada</div>
-    <h3>¡Listo, ${name}!</h3>
-    <p>Hemos preparado tu mensaje para el técnico con todos los datos y el presupuesto orientativo (${min}€ - ${max}€). Pulsa el botón para abrirlo en WhatsApp y enviarlo.</p>
+    <h3>¡Gracias, ${name}!</h3>
+    <p>Hemos recibido tu petición. Pulsa el botón para enviárnosla por WhatsApp y en breve nos pondremos en contacto contigo para confirmar presupuesto y horario de visita.</p>
     <a class="wa-link" href="${waUrl}" target="_blank" rel="noopener">Abrir WhatsApp y enviar</a>
     ${state.photos.length ? `<p style="margin-top:14px;">Adjunta también estas fotos en la conversación de WhatsApp:</p>
     <div class="photo-download">${state.photos.map(p=>`<a href="${p}" download="foto-${order.id}.jpg"><img src="${p}"></a>`).join('')}</div>` : ''}
@@ -504,7 +542,7 @@ async function renderTechView(){
       <div class="order-meta">${o.phone} · ${o.address}${o.town? ', '+o.town:''}</div>
       <div class="order-meta">Disponibilidad: ${o.availability}</div>
       <div class="order-desc">${o.description}</div>
-      <div class="order-meta" style="margin-top:6px;">Presupuesto orientativo: <strong>${o.estimateMin}€ - ${o.estimateMax}€</strong></div>
+      
       <div class="order-bottom">
         <select class="status" data-id="${o.id}">
           <option value="pendiente" ${o.status==='pendiente'?'selected':''}>Pendiente</option>
