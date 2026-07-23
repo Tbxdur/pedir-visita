@@ -440,7 +440,8 @@ $('orderForm').addEventListener('submit', async (e)=>{
     category: state.category.label,
     description, name, phone, town, address,
     availability: state.availability,
-    photosCount: state.photos.length
+    photosCount: state.photos.length,
+    photos: state.photos
   };
 
   submitBtn.disabled = true;
