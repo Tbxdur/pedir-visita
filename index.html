@@ -207,10 +207,6 @@
   <main id="clientView">
     <div class="ticket-card">
       <div class="perforation"></div>
-      <div class="ticket-head">
-        <div class="ticket-label">ORDEN DE TRABAJO</div>
-        <div class="ticket-number" id="ticketNumberDisplay">Nº ----</div>
-      </div>
 
       <form id="orderForm">
         <div class="step">
@@ -395,7 +391,6 @@ function makeTicketId(){
 }
 const urlParams = new URLSearchParams(window.location.search);
 const currentTicket = urlParams.get('ticket') || makeTicketId();
-$('ticketNumberDisplay').textContent = 'Nº ' + currentTicket;
 if(urlParams.get('phone')) $('phone').value = urlParams.get('phone');
 if(urlParams.get('name')) $('name').value = decodeURIComponent(urlParams.get('name'));
 
@@ -471,7 +466,7 @@ $('orderForm').addEventListener('submit', async (e)=>{
   const confirmBox = $('confirmBox');
   confirmBox.hidden = false;
   confirmBox.innerHTML = `
-    <div class="confirm-badge">✓ Petición Nº ${order.id} registrada</div>
+    <div class="confirm-badge">✓ Petición registrada</div>
     <h3>¡Gracias, ${name}!</h3>
     <p>Hemos recibido tu petición y en breve nos pondremos en contacto contigo para confirmar presupuesto, posibles detalles extras y horario de visita.</p>
     <br><button class="new-order-btn" onclick="location.reload()">Hacer otra petición</button>
