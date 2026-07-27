@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manitas de Confianza — Pedir visita</title> 
+<title>Manitas de Confianza — Pedir visita</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -28,7 +28,6 @@
   }
   .app{max-width:640px;margin:0 auto;min-height:100vh;background:var(--paper);}
 
-  /* ---------- topbar ---------- */
   .topbar{
     display:flex;align-items:center;justify-content:space-between;
     padding:16px 20px;background:var(--ink);color:var(--white);
@@ -38,16 +37,11 @@
   .brand svg{flex:none;}
   .brand-name{font-family:'Oswald',sans-serif;font-weight:600;font-size:1.05rem;letter-spacing:.02em;line-height:1.1;}
   .brand-sub{font-family:'IBM Plex Mono',monospace;font-size:.65rem;color:var(--amber);letter-spacing:.08em;}
-  .view-toggle{display:flex;background:#33373d;border-radius:8px;padding:3px;gap:2px;}
-  .view-toggle button{
-    border:none;background:transparent;color:#c9cdd3;font-family:'Inter',sans-serif;
-    font-size:.75rem;font-weight:600;padding:7px 12px;border-radius:6px;cursor:pointer;
-  }
-  .view-toggle button.active{background:var(--amber);color:var(--ink);}
+  .staff-link{color:#c9cdd3;font-size:.72rem;text-decoration:none;font-family:'IBM Plex Mono',monospace;}
+  .staff-link:hover{color:var(--amber);}
 
   main{padding:22px 18px 60px;}
 
-  /* ---------- ticket card ---------- */
   .ticket-card{
     background:var(--white);
     border-radius:2px;
@@ -62,14 +56,8 @@
     background-position:6px -8px;
     background-color:var(--ink);
   }
-  .ticket-head{
-    display:flex;align-items:baseline;justify-content:space-between;
-    padding:18px 20px 14px;border-bottom:2px dashed var(--paper-dark);
-  }
-  .ticket-label{font-family:'Oswald',sans-serif;font-weight:600;font-size:.95rem;letter-spacing:.06em;color:var(--steel);}
-  .ticket-number{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.9rem;color:var(--rust);}
 
-  form{padding:6px 20px 22px;}
+  form{padding:20px 20px 22px;}
   .step{margin-top:22px;}
   .step-label{
     display:flex;align-items:center;gap:8px;
@@ -89,7 +77,6 @@
   }
   .chip:hover{border-color:var(--amber-dark);}
   .chip.active{background:var(--ink);color:var(--white);border-color:var(--ink);}
-  .chip.urgent.active{background:var(--rust);border-color:var(--rust);}
 
   textarea, input[type=text], input[type=tel], input[type=date], #visitTime{
     width:100%;border:1.5px solid var(--paper-dark);border-radius:8px;
@@ -121,13 +108,6 @@
   }
   .hint{font-size:.76rem;color:var(--steel);margin-top:6px;}
 
-  .estimate-box{
-    margin-top:24px;background:var(--paper);border:1.5px solid var(--paper-dark);
-    border-radius:10px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;
-  }
-  .estimate-box .lbl{font-size:.8rem;color:var(--steel);font-weight:600;}
-  .estimate-box .val{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:1.15rem;color:var(--pine);}
-
   .submit-btn{
     width:100%;margin-top:20px;padding:15px;border:none;border-radius:10px;
     background:var(--amber);color:var(--ink);font-family:'Oswald',sans-serif;
@@ -135,57 +115,20 @@
     display:flex;align-items:center;justify-content:center;gap:8px;
   }
   .submit-btn:active{background:var(--amber-dark);}
+  .submit-btn:disabled{opacity:.6;cursor:default;}
   .error-msg{color:var(--rust);font-size:.8rem;margin-top:6px;font-weight:600;}
 
-  /* ---------- confirmation ---------- */
-  .confirm{padding:8px 20px 24px;}
+  .confirm{padding:22px 20px 24px;}
   .confirm-badge{
     display:inline-flex;align-items:center;gap:8px;background:#eaf1ea;color:var(--pine);
     padding:8px 14px;border-radius:20px;font-weight:700;font-size:.85rem;margin-bottom:14px;
   }
   .confirm h3{font-family:'Oswald',sans-serif;margin:0 0 6px;}
   .confirm p{color:var(--steel);font-size:.92rem;line-height:1.5;}
-  .wa-link{
-    display:inline-flex;align-items:center;gap:8px;margin-top:10px;padding:11px 16px;
-    background:#25D366;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;font-size:.9rem;
-  }
-  .photo-download{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
-  .photo-download a{display:block;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1.5px solid var(--paper-dark);}
-  .photo-download img{width:100%;height:100%;object-fit:cover;}
   .new-order-btn{
     margin-top:18px;background:none;border:1.5px solid var(--ink);color:var(--ink);
     padding:10px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;
   }
-
-  /* ---------- tech view ---------- */
-  .call-panel{background:var(--white);border:1.5px solid var(--amber-dark);border-radius:10px;padding:16px;}
-  .call-panel-title{font-family:'Oswald',sans-serif;font-weight:600;font-size:1rem;}
-  .call-panel-sub{color:var(--steel);font-size:.85rem;margin-top:2px;margin-bottom:4px;}
-  #techView h2{font-family:'Oswald',sans-serif;font-size:1.1rem;margin:0 0 4px;}
-  #techView .sub{color:var(--steel);font-size:.85rem;margin-bottom:18px;}
-  .order-card{
-    background:var(--white);border:1.5px solid var(--paper-dark);border-radius:10px;
-    padding:14px 16px;margin-bottom:12px;
-  }
-  .order-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
-  .order-cat{
-    display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:12px;
-    background:var(--paper);color:var(--ink);text-transform:uppercase;letter-spacing:.03em;
-  }
-  .order-id{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--steel);}
-  .order-name{font-weight:700;margin-top:8px;}
-  .order-meta{font-size:.85rem;color:var(--steel);margin-top:2px;}
-  .order-desc{font-size:.88rem;margin-top:8px;line-height:1.4;}
-  .order-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px;flex-wrap:wrap;}
-  select.status{
-    border:1.5px solid var(--paper-dark);border-radius:6px;padding:6px 8px;font-size:.8rem;font-weight:600;
-    font-family:'Inter',sans-serif;background:var(--paper);
-  }
-  .wa-mini{
-    background:#25D366;color:#fff;text-decoration:none;padding:7px 12px;border-radius:6px;
-    font-size:.8rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;
-  }
-  .empty-state{text-align:center;color:var(--steel);padding:40px 10px;font-size:.9rem;}
 </style>
 </head>
 <body>
@@ -198,10 +141,7 @@
         <div class="brand-sub">OFICIOS · A DOMICILIO</div>
       </div>
     </div>
-    <div class="view-toggle">
-      <button id="btnClientView" class="active" onclick="showView('client')">Cliente</button>
-      <button id="btnTechView" onclick="showView('tech')" style="display:none">Técnico</button>
-    </div>
+    <a class="staff-link" href="login.html">Acceso equipo →</a>
   </div>
 
   <main id="clientView">
@@ -248,7 +188,7 @@
               </select>
             </div>
           </div>
-          <div class="hint">Horario laboral: lunes a viernes de 8:00 a 18:00.</div>
+          <div class="hint">Horario laboral: lunes a viernes de 8:00 a 17:30.</div>
           <div class="weekend-note" id="weekendNote" hidden>⚠ Fin de semana seleccionado: puede aplicar un cargo extra sobre el presupuesto.</div>
         </div>
 
@@ -260,47 +200,24 @@
       <div class="confirm" id="confirmBox" hidden></div>
     </div>
   </main>
-
-  <main id="techView" hidden>
-    <div class="call-panel">
-      <div class="call-panel-title">📞 Acaba de llamar un cliente</div>
-      <div class="call-panel-sub">Escribe su teléfono y mándale el enlace para que rellene la petición.</div>
-      <div class="grid2" style="margin-top:10px;">
-        <div class="field"><label>Teléfono del cliente</label><input type="tel" id="callPhone" placeholder="600 123 456"></div>
-        <div class="field"><label>Nombre (si lo sabe)</label><input type="text" id="callName" placeholder="Opcional"></div>
-      </div>
-      <button type="button" class="submit-btn" style="margin-top:4px;" onclick="sendClientLink()">Generar enlace y enviar por WhatsApp</button>
-      <div class="hint" id="linkHint" style="margin-top:8px;"></div>
-    </div>
-
-    <h2 style="margin-top:26px;">Peticiones recibidas</h2>
-    <div class="sub">Se actualiza con cada nueva orden enviada.</div>
-    <div id="ordersList"></div>
-  </main>
 </div>
 
-<script>
-const CONFIG = {
-  whatsappNumber: '34607457051', // ← número de WhatsApp del técnico, en formato internacional sin '+'
-  sheetEndpoint: 'https://script.google.com/macros/s/AKfycbzUkFcxo65GH0mvE3btU072dYefZwOnveu-C4q5hxgLg82bsiLIhtv7FUO0MQ9fjfRa/exec',
-  categories: [
-    { id:'persiana',    label:'Persiana',     min:40,  max:80  },
-    { id:'cerrajeria',  label:'Cerrajería',   min:60,  max:120 },
-    { id:'electricidad',label:'Electricidad', min:50,  max:100 },
-    { id:'fontaneria',  label:'Fontanería',   min:50,  max:100 },
-    { id:'otros',       label:'Otros',        min:40,  max:90  }
-  ]
-};
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const state = { category:null, availability:null, photos:[] };
+const SUPABASE_URL = 'https://pxknaepakigpxymvtmct.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_HII4AujHp7KMr27zLS3_Gw_kaM7jhB4';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const CATEGORIES = ['Persiana','Cerrajería','Electricidad','Fontanería','Otros'];
+const state = { category:null, photos:[] };
 
 function $(id){ return document.getElementById(id); }
 
-// ---------- render category chips ----------
 const catWrap = $('categoryChips');
-CONFIG.categories.forEach(c=>{
+CATEGORIES.forEach(c=>{
   const el = document.createElement('div');
-  el.className='chip'; el.textContent=c.label; el.dataset.id=c.id;
+  el.className='chip'; el.textContent=c;
   el.onclick=()=>{
     document.querySelectorAll('#categoryChips .chip').forEach(x=>x.classList.remove('active'));
     el.classList.add('active'); state.category=c;
@@ -308,13 +225,21 @@ CONFIG.categories.forEach(c=>{
   catWrap.appendChild(el);
 });
 
-// ---------- availability (día y hora) ----------
 const visitDateEl = $('visitDate');
 const visitTimeEl = $('visitTime');
 const weekendNoteEl = $('weekendNote');
 
 (function populateTimeOptions(){
   for(let h=8; h<18; h++){
+    if(h===17){
+      const opt = document.createElement('option');
+      opt.value = '17:00'; opt.textContent = '17:00';
+      visitTimeEl.appendChild(opt);
+      const opt2 = document.createElement('option');
+      opt2.value = '17:30'; opt2.textContent = '17:30';
+      visitTimeEl.appendChild(opt2);
+      continue;
+    }
     ['00','30'].forEach(m=>{
       const val = `${String(h).padStart(2,'0')}:${m}`;
       const opt = document.createElement('option');
@@ -325,26 +250,20 @@ const weekendNoteEl = $('weekendNote');
 })();
 
 visitDateEl.min = new Date().toISOString().split('T')[0];
+let isWeekendSelected = false;
 
 function updateAvailability(){
-  if(visitDateEl.value && visitTimeEl.value){
+  if(visitDateEl.value){
     const [y, m, d] = visitDateEl.value.split('-').map(Number);
     const dateObj = new Date(y, m-1, d);
-    const dayNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-    const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    const isWeekend = dateObj.getDay()===0 || dateObj.getDay()===6;
-    weekendNoteEl.hidden = !isWeekend;
-    const niceDate = `${dayNames[dateObj.getDay()]} ${d} de ${monthNames[m-1]} de ${y}`;
-    state.availability = `${niceDate} a las ${visitTimeEl.value}` + (isWeekend ? ' (fin de semana, posible cargo extra)' : '');
+    isWeekendSelected = dateObj.getDay()===0 || dateObj.getDay()===6;
+    weekendNoteEl.hidden = !isWeekendSelected;
   } else {
-    state.availability = null;
     weekendNoteEl.hidden = true;
   }
 }
 visitDateEl.addEventListener('change', updateAvailability);
-visitTimeEl.addEventListener('change', updateAvailability);
 
-// ---------- photos ----------
 $('photoInput').addEventListener('change', (e)=>{
   const files = Array.from(e.target.files).slice(0, 3 - state.photos.length);
   files.forEach(file=>{
@@ -353,12 +272,13 @@ $('photoInput').addEventListener('change', (e)=>{
     reader.onload = (ev)=>{
       img.onload = ()=>{
         const canvas = document.createElement('canvas');
-        const scale = Math.min(1, 800/img.width);
+        const scale = Math.min(1, 900/img.width);
         canvas.width = img.width*scale; canvas.height = img.height*scale;
         canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-        state.photos.push(dataUrl);
-        renderPhotos();
+        canvas.toBlob(blob=>{
+          state.photos.push(blob);
+          renderPhotos();
+        }, 'image/jpeg', 0.7);
       };
       img.src = ev.target.result;
     };
@@ -370,53 +290,22 @@ $('photoInput').addEventListener('change', (e)=>{
 function renderPhotos(){
   const row = $('photoRow');
   row.querySelectorAll('.thumb').forEach(t=>t.remove());
-  state.photos.forEach((src, i)=>{
+  state.photos.forEach((blob, i)=>{
     const div = document.createElement('div');
     div.className='thumb';
-    div.innerHTML = `<img src="${src}"><button type="button" onclick="removePhoto(${i})">×</button>`;
+    const url = URL.createObjectURL(blob);
+    div.innerHTML = `<img src="${url}"><button type="button" data-i="${i}">×</button>`;
+    div.querySelector('button').onclick = ()=>{ state.photos.splice(i,1); renderPhotos(); };
     row.insertBefore(div, row.firstChild);
   });
-  $('photoInput').closest ? null : null;
   const addBtn = row.querySelector('.photo-add');
   if(addBtn) addBtn.style.display = state.photos.length>=3 ? 'none' : 'flex';
 }
-function removePhoto(i){ state.photos.splice(i,1); renderPhotos(); }
 
-// ---------- ticket number ----------
-function makeTicketId(){
-  const d = new Date();
-  const stamp = `${d.getFullYear().toString().slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
-  const rand = Math.floor(100+Math.random()*900);
-  return `${stamp}-${rand}`;
-}
 const urlParams = new URLSearchParams(window.location.search);
-const currentTicket = urlParams.get('ticket') || makeTicketId();
 if(urlParams.get('phone')) $('phone').value = urlParams.get('phone');
 if(urlParams.get('name')) $('name').value = decodeURIComponent(urlParams.get('name'));
 
-// ---------- phone normalizer ----------
-function normalizePhone(raw){
-  let p = raw.replace(/[^0-9+]/g,'');
-  if(p.startsWith('+')) return p.slice(1);
-  if(p.startsWith('34')) return p;
-  if(p.length===9) return '34'+p;
-  return p;
-}
-
-// ---------- storage helpers ----------
-async function loadOrders(){
-  try{
-    const res = await window.storage.get('workorders', true);
-    return res ? JSON.parse(res.value) : [];
-  }catch(e){ return []; }
-}
-async function saveOrders(orders){
-  try{
-    await window.storage.set('workorders', JSON.stringify(orders.slice(-50)), true);
-  }catch(e){ console.error('No se pudo guardar la orden', e); }
-}
-
-// ---------- submit ----------
 const submitBtn = document.querySelector('#orderForm .submit-btn');
 
 $('orderForm').addEventListener('submit', async (e)=>{
@@ -428,128 +317,62 @@ $('orderForm').addEventListener('submit', async (e)=>{
   const address = $('address').value.trim();
   const errBox = $('formError');
 
-  if(!state.category || !description || !name || !phone || !address || !state.availability){
+  if(!state.category || !description || !name || !phone || !address || !visitDateEl.value || !visitTimeEl.value){
     errBox.textContent = 'Faltan datos: revisa que hayas elegido el problema, escrito una descripción, y rellenado nombre, teléfono, dirección, y el día y hora de la visita.';
     errBox.hidden = false;
     return;
   }
   errBox.hidden = true;
-
-  const order = {
-    id: currentTicket,
-    category: state.category.label,
-    description, name, phone, town, address,
-    availability: state.availability,
-    photosCount: state.photos.length,
-    photos: state.photos
-  };
-
   submitBtn.disabled = true;
   submitBtn.textContent = 'Enviando...';
 
   try{
-    await fetch(CONFIG.sheetEndpoint, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(order)
+    const orderId = crypto.randomUUID();
+    const fotoUrls = [];
+    for(let i=0; i<state.photos.length; i++){
+      const path = `${orderId}/${i}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from('fotos-incidencias')
+        .upload(path, state.photos[i], { contentType:'image/jpeg' });
+      if(upErr) throw upErr;
+      const { data } = supabase.storage.from('fotos-incidencias').getPublicUrl(path);
+      fotoUrls.push(data.publicUrl);
+    }
+
+    const [y, m, d] = visitDateEl.value.split('-').map(Number);
+    const [hh, mm] = visitTimeEl.value.split(':').map(Number);
+    const fechaVisita = new Date(y, m-1, d, hh, mm).toISOString();
+
+    const { error: insErr } = await supabase.from('solicitudes').insert({
+      id: orderId,
+      problema: state.category,
+      descripcion: description,
+      fotos: fotoUrls,
+      nombre_cliente: name,
+      telefono: phone,
+      direccion: address,
+      poblacion: town,
+      fecha_visita: fechaVisita
     });
+    if(insErr) throw insErr;
+
+    $('orderForm').hidden = true;
+    const confirmBox = $('confirmBox');
+    confirmBox.hidden = false;
+    confirmBox.innerHTML = `
+      <div class="confirm-badge">✓ Petición registrada</div>
+      <h3>¡Gracias, ${name}!</h3>
+      <p>Hemos recibido tu petición y en breve nos pondremos en contacto contigo para confirmar presupuesto, posibles detalles extras y horario de visita.</p>
+      <br><button class="new-order-btn" onclick="location.reload()">Hacer otra petición</button>
+    `;
   }catch(err){
     console.error('No se pudo enviar la petición', err);
     errBox.textContent = 'No se ha podido enviar la petición. Comprueba tu conexión e inténtalo de nuevo.';
     errBox.hidden = false;
     submitBtn.disabled = false;
     submitBtn.textContent = 'Enviar petición';
-    return;
   }
-
-  $('orderForm').hidden = true;
-  const confirmBox = $('confirmBox');
-  confirmBox.hidden = false;
-  confirmBox.innerHTML = `
-    <div class="confirm-badge">✓ Petición registrada</div>
-    <h3>¡Gracias, ${name}!</h3>
-    <p>Hemos recibido tu petición y en breve nos pondremos en contacto contigo para confirmar presupuesto, posibles detalles extras y horario de visita.</p>
-    <br><button class="new-order-btn" onclick="location.reload()">Hacer otra petición</button>
-  `;
 });
-
-// ---------- generar y enviar enlace tras la llamada ----------
-function sendClientLink(){
-  const phone = $('callPhone').value.trim();
-  const name = $('callName').value.trim();
-  const hint = $('linkHint');
-  if(!phone){
-    hint.style.color = 'var(--rust)';
-    hint.textContent = 'Escribe el teléfono del cliente primero.';
-    return;
-  }
-  const ticketId = makeTicketId();
-  const base = window.location.origin + window.location.pathname;
-  let clientUrl = `${base}?ticket=${ticketId}&phone=${encodeURIComponent(phone)}`;
-  if(name) clientUrl += `&name=${encodeURIComponent(name)}`;
-
-  const msg = `Hola${name ? ' '+name : ''}, gracias por tu llamada. Para prepararte el presupuesto, rellena estos datos rápidos aquí: ${clientUrl}`;
-  const waUrl = `https://wa.me/${normalizePhone(phone)}?text=${encodeURIComponent(msg)}`;
-  window.open(waUrl, '_blank');
-
-  hint.style.color = 'var(--pine)';
-  hint.textContent = `Enlace generado (Nº ${ticketId}) y WhatsApp abierto para enviarlo.`;
-}
-
-// ---------- view toggle ----------
-function showView(view){
-  $('clientView').hidden = view!=='client';
-  $('techView').hidden = view!=='tech';
-  $('btnClientView').classList.toggle('active', view==='client');
-  $('btnTechView').classList.toggle('active', view==='tech');
-  if(view==='tech') renderTechView();
-}
-
-async function renderTechView(){
-  const list = $('ordersList');
-  list.innerHTML = '<div class="empty-state">Cargando...</div>';
-  const orders = await loadOrders();
-  if(!orders.length){
-    list.innerHTML = '<div class="empty-state">Aún no ha llegado ninguna petición.<br>Prueba a enviar una desde la vista "Cliente".</div>';
-    return;
-  }
-  list.innerHTML = '';
-  orders.slice().reverse().forEach(o=>{
-    const waText = encodeURIComponent(`Hola ${o.name}, te escribo por tu petición Nº ${o.id} (${o.category}). Te confirmo presupuesto y horario de visita.`);
-    const waUrl = `https://wa.me/${normalizePhone(o.phone)}?text=${waText}`;
-    const card = document.createElement('div');
-    card.className='order-card';
-    card.innerHTML = `
-      <div class="order-card-top">
-        <div>
-          <span class="order-cat">${o.category}</span>
-          <div class="order-name">${o.name}</div>
-        </div>
-        <div class="order-id">Nº ${o.id}</div>
-      </div>
-      <div class="order-meta">${o.phone} · ${o.address}${o.town? ', '+o.town:''}</div>
-      <div class="order-meta">Disponibilidad: ${o.availability}</div>
-      <div class="order-desc">${o.description}</div>
-      
-      <div class="order-bottom">
-        <select class="status" data-id="${o.id}">
-          <option value="pendiente" ${o.status==='pendiente'?'selected':''}>Pendiente</option>
-          <option value="presupuestado" ${o.status==='presupuestado'?'selected':''}>Presupuestado</option>
-          <option value="en_curso" ${o.status==='en_curso'?'selected':''}>En curso</option>
-          <option value="hecho" ${o.status==='hecho'?'selected':''}>Hecho</option>
-        </select>
-        <a class="wa-mini" href="${waUrl}" target="_blank" rel="noopener">Contactar por WhatsApp</a>
-      </div>
-    `;
-    card.querySelector('select').addEventListener('change', async (e)=>{
-      const orders2 = await loadOrders();
-      const idx = orders2.findIndex(x=>x.id===o.id);
-      if(idx>-1){ orders2[idx].status = e.target.value; await saveOrders(orders2); }
-    });
-    list.appendChild(card);
-  });
-}
 </script>
 </body>
 </html>
