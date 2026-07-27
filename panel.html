@@ -78,8 +78,8 @@
   .badge-problema{background:var(--paper);color:var(--ink);}
   .badge-pendiente{background:#e8e5df;color:var(--steel);}
   .badge-asignada{background:#fbeecb;color:var(--amber-dark);}
-  .badge-presupuestada{background:#e3ecec;color:#2a6f6f;}
-  .badge-contactado{background:#e6eee6;color:var(--pine);}
+  .badge-presupuestado{background:#e3ecec;color:#2a6f6f;}
+  .badge-esperando_respuesta{background:#e6eee6;color:var(--pine);}
   .badge-cerrada{background:var(--ink);color:var(--white);}
   .order-id{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:var(--steel);}
   .client-name{font-weight:700;margin-top:8px;font-size:.98rem;}
@@ -109,6 +109,18 @@
   .presupuesto-form input[type=text]{flex:1;min-width:140px;border:1.5px solid var(--paper-dark);border-radius:7px;padding:8px 10px;font-size:.85rem;}
   .presupuesto-view{font-size:.88rem;background:var(--paper);border-radius:8px;padding:9px 12px;}
   .presupuesto-view b{font-family:'IBM Plex Mono',monospace;color:var(--pine);}
+
+  .gestion-panel{display:flex;flex-direction:column;gap:8px;width:100%;}
+  .gestion-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .estado-select{
+    border:1.5px solid var(--paper-dark);border-radius:7px;padding:8px 10px;font-size:.82rem;font-weight:600;
+    background:var(--paper);font-family:'Inter',sans-serif;
+  }
+  .comentario-input{
+    width:100%;border:1.5px solid var(--paper-dark);border-radius:7px;padding:8px 10px;font-size:.85rem;
+    font-family:'Inter',sans-serif;min-height:52px;resize:vertical;background:var(--white);color:var(--ink);
+  }
+  .horas-input{width:130px;border:1.5px solid var(--paper-dark);border-radius:7px;padding:8px 10px;font-size:.85rem;}
 
   .empty-state{text-align:center;color:var(--steel);padding:50px 10px;font-size:.9rem;}
 
@@ -164,9 +176,8 @@
         <select id="estadoFilter">
           <option value="">Todos los estados</option>
           <option value="pendiente">Pendiente</option>
-          <option value="asignada">Asignada</option>
-          <option value="presupuestada">Presupuestada</option>
-          <option value="contactado">Contactado</option>
+          <option value="presupuestado">Presupuestado</option>
+          <option value="esperando_respuesta">Esperando respuesta</option>
           <option value="cerrada">Cerrada</option>
         </select>
         <select id="tecnicoFilter"><option value="">Todos los técnicos</option></select>
@@ -176,10 +187,10 @@
 
     <div id="tabUsuarios" hidden>
       <div class="new-user-hint">
-        <b>Para dar de alta a un técnico o jefe:</b> ve a tu proyecto de Supabase → Authentication → Users → "Add user", crea la cuenta con su email y una contraseña temporal. Aparecerá aquí abajo automáticamente con rol "tecnico" — cámbiale el nombre y el rol directamente en esta tabla si corresponde.
+        <b>Para dar de alta a un técnico o jefe:</b> ve a tu proyecto de Supabase → Authentication → Users → "Add user", crea la cuenta con su email y una contraseña temporal. Aparecerá aquí abajo automáticamente — ponle el <b>nombre y apellido completo</b> (es lo que verás al asignar solicitudes) y ajusta el rol si corresponde.
       </div>
       <table class="users-table">
-        <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Activo</th></tr></thead>
+        <thead><tr><th>Nombre y apellido</th><th>Email</th><th>Rol</th><th>Activo</th></tr></thead>
         <tbody id="usersTableBody"></tbody>
       </table>
     </div>
@@ -194,8 +205,8 @@ const SUPABASE_KEY = 'sb_publishable_HII4AujHp7KMr27zLS3_Gw_kaM7jhB4';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function $(id){ return document.getElementById(id); }
-const ESTADOS = ['pendiente','asignada','presupuestada','contactado','cerrada'];
-const ESTADO_LABEL = { pendiente:'Pendiente', asignada:'Asignada', presupuestada:'Presupuestada', contactado:'Contactado', cerrada:'Cerrada' };
+const ESTADOS = ['pendiente','presupuestado','esperando_respuesta','cerrada'];
+const ESTADO_LABEL = { pendiente:'Pendiente', presupuestado:'Presupuestado', esperando_respuesta:'Esperando respuesta', cerrada:'Cerrada' };
 
 let me = null;      // { id, nombre, rol, email }
 let tecnicos = [];  // for jefe/admin assign dropdown
@@ -284,22 +295,24 @@ async function loadSolicitudes(){
 }
 
 function renderStats(list){
-  const counts = { pendiente:0, asignada:0, presupuestada:0, contactado:0, cerrada:0 };
-  let totalPresupuestado = 0, totalCerrado = 0;
+  const counts = { pendiente:0, presupuestado:0, esperando_respuesta:0, cerrada:0 };
+  let totalPresupuestado = 0, totalCerrado = 0, totalHoras = 0;
   list.forEach(s=>{
     if(counts[s.estado] !== undefined) counts[s.estado]++;
     if(s.presupuesto_monto){
       totalPresupuestado += Number(s.presupuesto_monto);
       if(s.estado === 'cerrada') totalCerrado += Number(s.presupuesto_monto);
     }
+    if(s.horas_dedicadas) totalHoras += Number(s.horas_dedicadas);
   });
   $('statsRow').innerHTML = `
     <div class="stat-card"><div class="n">${list.length}</div><div class="l">Total</div></div>
     <div class="stat-card"><div class="n">${counts.pendiente}</div><div class="l">Pendientes</div></div>
-    <div class="stat-card"><div class="n">${counts.asignada}</div><div class="l">Asignadas</div></div>
+    <div class="stat-card"><div class="n">${counts.esperando_respuesta}</div><div class="l">Esperando resp.</div></div>
     <div class="stat-card"><div class="n">${counts.cerrada}</div><div class="l">Cerradas</div></div>
     <div class="stat-card"><div class="n">${totalPresupuestado.toFixed(0)}€</div><div class="l">Presupuestado</div></div>
     <div class="stat-card"><div class="n">${totalCerrado.toFixed(0)}€</div><div class="l">Facturado</div></div>
+    <div class="stat-card"><div class="n">${totalHoras.toFixed(1)}h</div><div class="l">Horas registradas</div></div>
   `;
 }
 
@@ -343,31 +356,34 @@ function renderSolicitudes(list){
       if(me.rol === 'admin'){
         actionsHtml += `<button class="btn btn-rust delete-btn" data-id="${s.id}">Eliminar</button>`;
       }
-      if(s.presupuesto_monto){
-        actionsHtml += `<div class="presupuesto-view"><b>${Number(s.presupuesto_monto).toFixed(2)}€</b> — ${s.presupuesto_comentario||'sin comentario'}</div>`;
+      if(s.presupuesto_monto || s.comentario){
+        actionsHtml += `<div class="presupuesto-view">${s.presupuesto_monto?`<b>${Number(s.presupuesto_monto).toFixed(2)}€</b> — `:''}${s.comentario||'sin comentario'}${s.horas_dedicadas?` · ${s.horas_dedicadas}h dedicadas`:''}</div>`;
       }
     }
 
     if(me.rol === 'tecnico' && s.tecnico_id === me.id){
-      if(s.estado === 'asignada'){
+      if(s.estado !== 'cerrada'){
         actionsHtml += `
-          <div class="presupuesto-form" data-id="${s.id}">
-            <input type="number" step="0.01" class="pres-monto" placeholder="Importe €">
-            <input type="text" class="pres-comentario" placeholder="Comentario (opcional)">
-            <button class="btn btn-amber guardar-presupuesto-btn" data-id="${s.id}">Guardar presupuesto</button>
+          <div class="gestion-panel" data-id="${s.id}">
+            <div class="gestion-row">
+              <select class="estado-select" data-id="${s.id}">
+                <option value="pendiente" ${s.estado==='pendiente'?'selected':''}>Pendiente</option>
+                <option value="presupuestado" ${s.estado==='presupuestado'?'selected':''}>Presupuestado</option>
+                <option value="esperando_respuesta" ${s.estado==='esperando_respuesta'?'selected':''}>Esperando respuesta</option>
+              </select>
+              <input type="number" step="0.01" class="pres-monto" placeholder="Importe €" value="${s.presupuesto_monto ?? ''}">
+              <button class="btn btn-amber guardar-presupuesto-btn" data-id="${s.id}">Guardar importe</button>
+            </div>
+            <textarea class="comentario-input" data-id="${s.id}" placeholder="Comentarios de la gestión (llamadas, acuerdos, seguimiento...)">${s.comentario||''}</textarea>
+            <div class="gestion-row">
+              <button class="btn btn-ghost guardar-comentario-btn" data-id="${s.id}">Guardar comentario</button>
+              <input type="number" step="0.25" class="horas-input" placeholder="Horas dedicadas">
+              <button class="btn btn-pine cerrar-btn" data-id="${s.id}">Marcar como cerrado</button>
+            </div>
           </div>`;
-      }
-      if(s.presupuesto_monto && s.estado !== 'asignada'){
-        actionsHtml += `<div class="presupuesto-view"><b>${Number(s.presupuesto_monto).toFixed(2)}€</b> — ${s.presupuesto_comentario||'sin comentario'}</div>`;
-      }
-      if(s.estado === 'presupuestada'){
-        actionsHtml += `<button class="btn btn-pine marcar-contactado-btn" data-id="${s.id}">Marcar contactado</button>`;
-      }
-      if(s.estado === 'contactado'){
-        actionsHtml += `<button class="btn btn-pine cerrar-btn" data-id="${s.id}">Cerrar solicitud</button>`;
-      }
-      if(s.estado === 'cerrada'){
-        actionsHtml += `<span class="badge badge-cerrada">Cerrada</span>`;
+      } else {
+        actionsHtml += `<span class="badge badge-cerrada">Cerrada${s.horas_dedicadas?` · ${s.horas_dedicadas}h`:''}</span>`;
+        if(s.comentario) actionsHtml += `<div class="presupuesto-view">${s.comentario}</div>`;
       }
       actionsHtml += `<a class="btn btn-ghost" href="tel:${s.telefono}">Llamar</a>`;
       actionsHtml += `<a class="btn btn-ghost" href="${waUrl}" target="_blank" rel="noopener">WhatsApp</a>`;
@@ -413,28 +429,41 @@ function renderSolicitudes(list){
   el.querySelectorAll('.guardar-presupuesto-btn').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       const id = e.target.dataset.id;
-      const form = e.target.closest('.presupuesto-form');
-      const monto = form.querySelector('.pres-monto').value;
-      const comentario = form.querySelector('.pres-comentario').value;
+      const panel = e.target.closest('.gestion-panel');
+      const monto = panel.querySelector('.pres-monto').value;
       if(!monto){ alert('Escribe un importe.'); return; }
-      const { error } = await supabase.from('solicitudes').update({
-        presupuesto_monto: Number(monto), presupuesto_comentario: comentario, estado: 'presupuestada'
-      }).eq('id', id);
+      const { error } = await supabase.from('solicitudes').update({ presupuesto_monto: Number(monto) }).eq('id', id);
       if(error) alert('No se pudo guardar: ' + error.message);
       else loadSolicitudes();
     });
   });
-  el.querySelectorAll('.marcar-contactado-btn').forEach(btn=>{
+  el.querySelectorAll('.estado-select').forEach(sel=>{
+    sel.addEventListener('change', async (e)=>{
+      const id = e.target.dataset.id;
+      const { error } = await supabase.from('solicitudes').update({ estado: e.target.value }).eq('id', id);
+      if(error){ alert('No se pudo cambiar el estado: ' + error.message); } else loadSolicitudes();
+    });
+  });
+  el.querySelectorAll('.guardar-comentario-btn').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       const id = e.target.dataset.id;
-      const { error } = await supabase.from('solicitudes').update({ estado:'contactado' }).eq('id', id);
-      if(error) alert('Error: ' + error.message); else loadSolicitudes();
+      const panel = e.target.closest('.gestion-panel');
+      const comentario = panel.querySelector('.comentario-input').value;
+      const { error } = await supabase.from('solicitudes').update({ comentario }).eq('id', id);
+      if(error) alert('No se pudo guardar el comentario: ' + error.message);
+      else loadSolicitudes();
     });
   });
   el.querySelectorAll('.cerrar-btn').forEach(btn=>{
     btn.addEventListener('click', async (e)=>{
       const id = e.target.dataset.id;
-      const { error } = await supabase.from('solicitudes').update({ estado:'cerrada', cerrado_en: new Date().toISOString() }).eq('id', id);
+      const panel = e.target.closest('.gestion-panel');
+      const horas = panel.querySelector('.horas-input').value;
+      if(!horas){ alert('Indica las horas dedicadas antes de cerrar.'); return; }
+      if(!confirm('¿Cerrar esta solicitud? Se dará por finalizada la gestión.')) return;
+      const { error } = await supabase.from('solicitudes').update({
+        estado:'cerrada', horas_dedicadas: Number(horas), cerrado_en: new Date().toISOString()
+      }).eq('id', id);
       if(error) alert('Error: ' + error.message); else loadSolicitudes();
     });
   });
