@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel — Manitas de Confianza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#23262B;
+    --paper:#ECE6D8;
+    --paper-dark:#DCD3BE;
+    --amber:#E3A008;
+    --amber-dark:#B87F04;
+    --rust:#B4402C;
+    --steel:#5C6670;
+    --pine:#2F5233;
+    --white:#FBF9F4;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  .app{max-width:920px;margin:0 auto;min-height:100vh;}
+
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;background:var(--ink);color:var(--white);
+    position:sticky;top:0;z-index:30;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-name{font-family:'Oswald',sans-serif;font-weight:600;font-size:1rem;letter-spacing:.02em;line-height:1.1;}
+  .brand-sub{font-family:'IBM Plex Mono',monospace;font-size:.62rem;color:var(--amber);letter-spacing:.08em;}
+  .top-right{display:flex;align-items:center;gap:14px;}
+  .who{text-align:right;font-size:.78rem;line-height:1.3;}
+  .who .nombre{font-weight:700;}
+  .who .rol{font-family:'IBM Plex Mono',monospace;color:var(--amber);font-size:.65rem;text-transform:uppercase;}
+  .bell{position:relative;background:#33373d;border:none;color:var(--white);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:1rem;}
+  .bell .dot{position:absolute;top:4px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--rust);display:none;}
+  .bell.has-unread .dot{display:block;}
+  .logout-btn{background:transparent;border:1.5px solid #4a4f57;color:#c9cdd3;font-size:.75rem;padding:7px 11px;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .logout-btn:hover{border-color:var(--rust);color:var(--rust);}
+
+  .notif-panel{
+    display:none;position:absolute;right:20px;top:58px;width:300px;max-height:360px;overflow:auto;
+    background:var(--white);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.25);z-index:40;
+  }
+  .notif-panel.open{display:block;}
+  .notif-item{padding:12px 14px;border-bottom:1px solid var(--paper-dark);font-size:.82rem;cursor:pointer;}
+  .notif-item:hover{background:var(--paper);}
+  .notif-item .t{color:var(--steel);font-size:.7rem;margin-top:3px;}
+  .notif-empty{padding:20px;text-align:center;color:var(--steel);font-size:.82rem;}
+
+  .tabs{display:flex;gap:6px;padding:14px 20px 0;}
+  .tab-btn{
+    border:none;background:transparent;color:var(--steel);font-family:'Oswald',sans-serif;font-weight:600;
+    font-size:.88rem;padding:9px 4px;cursor:pointer;border-bottom:3px solid transparent;
+  }
+  .tab-btn.active{color:var(--ink);border-color:var(--amber);}
+
+  main{padding:16px 20px 60px;}
+
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px;}
+  .stat-card{background:var(--white);border-radius:10px;padding:12px 14px;border:1.5px solid var(--paper-dark);}
+  .stat-card .n{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:1.3rem;color:var(--pine);}
+  .stat-card .l{font-size:.72rem;color:var(--steel);font-weight:600;margin-top:2px;}
+
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .filters select, .filters input{
+    border:1.5px solid var(--paper-dark);border-radius:8px;padding:9px 11px;font-family:'Inter',sans-serif;
+    font-size:.85rem;background:var(--white);color:var(--ink);
+  }
+  .filters input[type=search]{flex:1;min-width:160px;}
+
+  .card{background:var(--white);border:1.5px solid var(--paper-dark);border-radius:10px;padding:15px 16px;margin-bottom:12px;}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+  .card-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .badge{font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:12px;text-transform:uppercase;letter-spacing:.03em;}
+  .badge-problema{background:var(--paper);color:var(--ink);}
+  .badge-pendiente{background:#e8e5df;color:var(--steel);}
+  .badge-asignada{background:#fbeecb;color:var(--amber-dark);}
+  .badge-presupuestada{background:#e3ecec;color:#2a6f6f;}
+  .badge-contactado{background:#e6eee6;color:var(--pine);}
+  .badge-cerrada{background:var(--ink);color:var(--white);}
+  .order-id{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:var(--steel);}
+  .client-name{font-weight:700;margin-top:8px;font-size:.98rem;}
+  .meta{font-size:.85rem;color:var(--steel);margin-top:3px;}
+  .meta a{color:var(--pine);text-decoration:none;font-weight:600;}
+  .desc{font-size:.88rem;margin-top:10px;line-height:1.45;}
+  .fotos{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .fotos a{display:block;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1.5px solid var(--paper-dark);}
+  .fotos img{width:100%;height:100%;object-fit:cover;}
+
+  .card-actions{margin-top:13px;padding-top:13px;border-top:1.5px dashed var(--paper-dark);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .card-actions select{
+    border:1.5px solid var(--paper-dark);border-radius:7px;padding:8px 10px;font-size:.82rem;font-weight:600;
+    background:var(--paper);font-family:'Inter',sans-serif;
+  }
+  .btn{
+    border:none;border-radius:7px;padding:9px 14px;font-size:.82rem;font-weight:700;cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  .btn-amber{background:var(--amber);color:var(--ink);}
+  .btn-pine{background:var(--pine);color:var(--white);}
+  .btn-ghost{background:transparent;border:1.5px solid var(--paper-dark);color:var(--ink);}
+  .btn-rust{background:transparent;border:1.5px solid var(--rust);color:var(--rust);}
+
+  .presupuesto-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;width:100%;}
+  .presupuesto-form input[type=number]{width:110px;border:1.5px solid var(--paper-dark);border-radius:7px;padding:8px 10px;font-size:.85rem;}
+  .presupuesto-form input[type=text]{flex:1;min-width:140px;border:1.5px solid var(--paper-dark);border-radius:7px;padding:8px 10px;font-size:.85rem;}
+  .presupuesto-view{font-size:.88rem;background:var(--paper);border-radius:8px;padding:9px 12px;}
+  .presupuesto-view b{font-family:'IBM Plex Mono',monospace;color:var(--pine);}
+
+  .empty-state{text-align:center;color:var(--steel);padding:50px 10px;font-size:.9rem;}
+
+  .users-table{width:100%;border-collapse:collapse;background:var(--white);border-radius:10px;overflow:hidden;border:1.5px solid var(--paper-dark);}
+  .users-table th{background:var(--paper);text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;color:var(--steel);padding:10px 12px;}
+  .users-table td{padding:10px 12px;font-size:.85rem;border-top:1px solid var(--paper-dark);}
+  .users-table select{border:1.5px solid var(--paper-dark);border-radius:6px;padding:5px 7px;font-size:.8rem;}
+  .toggle-activo{cursor:pointer;font-weight:700;font-size:.78rem;padding:4px 10px;border-radius:12px;border:none;}
+  .toggle-activo.on{background:#e6eee6;color:var(--pine);}
+  .toggle-activo.off{background:#f3e3e0;color:var(--rust);}
+  .new-user-hint{background:var(--white);border:1.5px solid var(--amber-dark);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:.85rem;line-height:1.5;}
+  .new-user-hint b{font-family:'Oswald',sans-serif;}
+
+  .loading{text-align:center;color:var(--steel);padding:40px;font-size:.9rem;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M14.7 6.3a4 4 0 00-5.4 4.9L3 17.5V21h3.5l6.3-6.3a4 4 0 004.9-5.4l-2.6 2.6-2-2 2.6-2.6z" stroke="#E3A008" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <div>
+        <div class="brand-name">Manitas de Confianza</div>
+        <div class="brand-sub">PANEL DE TRABAJO</div>
+      </div>
+    </div>
+    <div class="top-right">
+      <button class="bell" id="bellBtn">🔔<span class="dot"></span></button>
+      <div class="who">
+        <div class="nombre" id="whoNombre">—</div>
+        <div class="rol" id="whoRol">—</div>
+      </div>
+      <button class="logout-btn" id="logoutBtn">Salir</button>
+    </div>
+  </div>
+  <div class="notif-panel" id="notifPanel"></div>
+
+  <div class="tabs" id="tabs" hidden>
+    <button class="tab-btn active" data-tab="solicitudes" id="tabSolicitudesBtn">Solicitudes</button>
+    <button class="tab-btn" data-tab="usuarios" id="tabUsuariosBtn" hidden>Usuarios</button>
+  </div>
+
+  <main>
+    <div id="loadingBox" class="loading">Cargando...</div>
+
+    <div id="tabSolicitudes" hidden>
+      <div class="stats-row" id="statsRow" hidden></div>
+      <div class="filters" id="filtersRow" hidden>
+        <input type="search" id="searchInput" placeholder="Buscar por nombre, problema, dirección...">
+        <select id="estadoFilter">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="asignada">Asignada</option>
+          <option value="presupuestada">Presupuestada</option>
+          <option value="contactado">Contactado</option>
+          <option value="cerrada">Cerrada</option>
+        </select>
+        <select id="tecnicoFilter"><option value="">Todos los técnicos</option></select>
+      </div>
+      <div id="solicitudesList"></div>
+    </div>
+
+    <div id="tabUsuarios" hidden>
+      <div class="new-user-hint">
+        <b>Para dar de alta a un técnico o jefe:</b> ve a tu proyecto de Supabase → Authentication → Users → "Add user", crea la cuenta con su email y una contraseña temporal. Aparecerá aquí abajo automáticamente con rol "tecnico" — cámbiaselo si corresponde.
+      </div>
+      <table class="users-table">
+        <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Activo</th></tr></thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL = 'https://pxknaepakigpxymvtmct.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_HII4AujHp7KMr27zLS3_Gw_kaM7jhB4';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function $(id){ return document.getElementById(id); }
+const ESTADOS = ['pendiente','asignada','presupuestada','contactado','cerrada'];
+const ESTADO_LABEL = { pendiente:'Pendiente', asignada:'Asignada', presupuestada:'Presupuestada', contactado:'Contactado', cerrada:'Cerrada' };
+
+let me = null;      // { id, nombre, rol, email }
+let tecnicos = [];  // for jefe/admin assign dropdown
+let currentTab = 'solicitudes';
+
+// ---------- auth guard ----------
+const { data: { session } } = await supabase.auth.getSession();
+if(!session){
+  window.location.href = 'login.html';
+  throw new Error('no session');
+}
+
+const { data: profile, error: profErr } = await supabase
+  .from('profiles').select('id,nombre,rol,email,activo').eq('id', session.user.id).single();
+
+if(profErr || !profile || !profile.activo){
+  await supabase.auth.signOut();
+  window.location.href = 'login.html';
+  throw new Error('no profile');
+}
+me = profile;
+
+$('whoNombre').textContent = me.nombre;
+$('whoRol').textContent = me.rol;
+$('logoutBtn').onclick = async ()=>{ await supabase.auth.signOut(); window.location.href = 'login.html'; };
+
+const isStaffView = (me.rol === 'admin' || me.rol === 'jefe');
+
+if(me.rol === 'admin'){
+  $('tabs').hidden = false;
+  $('tabUsuariosBtn').hidden = false;
+  $('tabUsuariosBtn').onclick = ()=> switchTab('usuarios');
+  $('tabSolicitudesBtn').onclick = ()=> switchTab('solicitudes');
+} else if(me.rol === 'jefe'){
+  $('tabs').hidden = false;
+}
+
+function switchTab(tab){
+  currentTab = tab;
+  $('tabSolicitudes').hidden = tab !== 'solicitudes';
+  $('tabUsuarios').hidden = tab !== 'usuarios';
+  $('tabSolicitudesBtn').classList.toggle('active', tab==='solicitudes');
+  $('tabUsuariosBtn').classList.toggle('active', tab==='usuarios');
+  if(tab==='usuarios') loadUsuarios();
+}
+
+if(isStaffView){
+  $('statsRow').hidden = false;
+  $('filtersRow').hidden = false;
+  const { data: tecs } = await supabase.from('profiles').select('id,nombre').eq('rol','tecnico').eq('activo', true);
+  tecnicos = tecs || [];
+  const sel = $('tecnicoFilter');
+  tecnicos.forEach(t=>{
+    const o = document.createElement('option'); o.value = t.id; o.textContent = t.nombre; sel.appendChild(o);
+  });
+  $('searchInput').addEventListener('input', debounce(loadSolicitudes, 300));
+  $('estadoFilter').addEventListener('change', loadSolicitudes);
+  $('tecnicoFilter').addEventListener('change', loadSolicitudes);
+}
+
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
+
+// ---------- fetch + render solicitudes ----------
+async function loadSolicitudes(){
+  let query = supabase.from('solicitudes').select('*').order('creado_en', { ascending:false });
+
+  if(me.rol === 'tecnico'){
+    query = query.eq('tecnico_id', me.id);
+  } else {
+    const estado = $('estadoFilter').value;
+    const tecnicoId = $('tecnicoFilter').value;
+    const search = $('searchInput').value.trim();
+    if(estado) query = query.eq('estado', estado);
+    if(tecnicoId) query = query.eq('tecnico_id', tecnicoId);
+    if(search) query = query.or(`nombre_cliente.ilike.%${search}%,problema.ilike.%${search}%,direccion.ilike.%${search}%,poblacion.ilike.%${search}%`);
+  }
+
+  const { data, error } = await query;
+  $('loadingBox').hidden = true;
+  $('tabSolicitudes').hidden = false;
+
+  if(error){ $('solicitudesList').innerHTML = `<div class="empty-state">Error al cargar: ${error.message}</div>`; return; }
+
+  if(isStaffView) renderStats(data || []);
+  renderSolicitudes(data || []);
+}
+
+function renderStats(list){
+  const counts = { pendiente:0, asignada:0, presupuestada:0, contactado:0, cerrada:0 };
+  let totalPresupuestado = 0, totalCerrado = 0;
+  list.forEach(s=>{
+    if(counts[s.estado] !== undefined) counts[s.estado]++;
+    if(s.presupuesto_monto){
+      totalPresupuestado += Number(s.presupuesto_monto);
+      if(s.estado === 'cerrada') totalCerrado += Number(s.presupuesto_monto);
+    }
+  });
+  $('statsRow').innerHTML = `
+    <div class="stat-card"><div class="n">${list.length}</div><div class="l">Total</div></div>
+    <div class="stat-card"><div class="n">${counts.pendiente}</div><div class="l">Pendientes</div></div>
+    <div class="stat-card"><div class="n">${counts.asignada}</div><div class="l">Asignadas</div></div>
+    <div class="stat-card"><div class="n">${counts.cerrada}</div><div class="l">Cerradas</div></div>
+    <div class="stat-card"><div class="n">${totalPresupuestado.toFixed(0)}€</div><div class="l">Presupuestado</div></div>
+    <div class="stat-card"><div class="n">${totalCerrado.toFixed(0)}€</div><div class="l">Facturado</div></div>
+  `;
+}
+
+function fmtFecha(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' }) + ' ' +
+         d.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' });
+}
+function normalizePhone(raw){
+  let p = (raw||'').replace(/[^0-9+]/g,'');
+  if(p.startsWith('+')) return p.slice(1);
+  if(p.startsWith('34')) return p;
+  if(p.length===9) return '34'+p;
+  return p;
+}
+
+function renderSolicitudes(list){
+  const el = $('solicitudesList');
+  if(!list.length){
+    el.innerHTML = `<div class="empty-state">${me.rol==='tecnico' ? 'No tienes solicitudes asignadas todavía.' : 'No hay solicitudes que coincidan con estos filtros.'}</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  list.forEach(s=>{
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const fotosHtml = (s.fotos||[]).map(url=>`<a href="${url}" target="_blank" rel="noopener"><img src="${url}"></a>`).join('');
+    const waUrl = `https://wa.me/${normalizePhone(s.telefono)}`;
+
+    let actionsHtml = '';
+
+    if(isStaffView){
+      const tecnicoOptions = tecnicos.map(t=>`<option value="${t.id}" ${s.tecnico_id===t.id?'selected':''}>${t.nombre}</option>`).join('');
+      actionsHtml += `
+        <select class="assign-select" data-id="${s.id}">
+          <option value="">Sin asignar</option>
+          ${tecnicoOptions}
+        </select>`;
+      if(me.rol === 'admin'){
+        actionsHtml += `<button class="btn btn-rust delete-btn" data-id="${s.id}">Eliminar</button>`;
+      }
+      if(s.presupuesto_monto){
+        actionsHtml += `<div class="presupuesto-view"><b>${Number(s.presupuesto_monto).toFixed(2)}€</b> — ${s.presupuesto_comentario||'sin comentario'}</div>`;
+      }
+    }
+
+    if(me.rol === 'tecnico' && s.tecnico_id === me.id){
+      if(s.estado === 'asignada'){
+        actionsHtml += `
+          <div class="presupuesto-form" data-id="${s.id}">
+            <input type="number" step="0.01" class="pres-monto" placeholder="Importe €">
+            <input type="text" class="pres-comentario" placeholder="Comentario (opcional)">
+            <button class="btn btn-amber guardar-presupuesto-btn" data-id="${s.id}">Guardar presupuesto</button>
+          </div>`;
+      }
+      if(s.presupuesto_monto && s.estado !== 'asignada'){
+        actionsHtml += `<div class="presupuesto-view"><b>${Number(s.presupuesto_monto).toFixed(2)}€</b> — ${s.presupuesto_comentario||'sin comentario'}</div>`;
+      }
+      if(s.estado === 'presupuestada'){
+        actionsHtml += `<button class="btn btn-pine marcar-contactado-btn" data-id="${s.id}">Marcar contactado</button>`;
+      }
+      if(s.estado === 'contactado'){
+        actionsHtml += `<button class="btn btn-pine cerrar-btn" data-id="${s.id}">Cerrar solicitud</button>`;
+      }
+      if(s.estado === 'cerrada'){
+        actionsHtml += `<span class="badge badge-cerrada">Cerrada</span>`;
+      }
+      actionsHtml += `<a class="btn btn-ghost" href="tel:${s.telefono}">Llamar</a>`;
+      actionsHtml += `<a class="btn btn-ghost" href="${waUrl}" target="_blank" rel="noopener">WhatsApp</a>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-left">
+          <span class="badge badge-problema">${s.problema}</span>
+          <span class="badge badge-${s.estado}">${ESTADO_LABEL[s.estado]}</span>
+        </div>
+        <div class="order-id">Nº ${s.numero_orden}</div>
+      </div>
+      <div class="client-name">${s.nombre_cliente}</div>
+      <div class="meta">📞 ${s.telefono} · ${s.direccion||''}${s.poblacion? ', '+s.poblacion:''}</div>
+      <div class="meta">🗓 Visita: ${fmtFecha(s.fecha_visita)}</div>
+      <div class="desc">${s.descripcion||''}</div>
+      ${fotosHtml ? `<div class="fotos">${fotosHtml}</div>` : ''}
+      <div class="card-actions">${actionsHtml}</div>
+    `;
+    el.appendChild(card);
+  });
+
+  // wire up events
+  el.querySelectorAll('.assign-select').forEach(sel=>{
+    sel.addEventListener('change', async (e)=>{
+      const id = e.target.dataset.id;
+      const tecnicoId = e.target.value || null;
+      const { error } = await supabase.from('solicitudes').update({ tecnico_id: tecnicoId }).eq('id', id);
+      if(error) alert('No se pudo asignar: ' + error.message);
+      else loadSolicitudes();
+    });
+  });
+  el.querySelectorAll('.delete-btn').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      if(!confirm('¿Eliminar esta solicitud definitivamente?')) return;
+      const id = e.target.dataset.id;
+      const { error } = await supabase.from('solicitudes').delete().eq('id', id);
+      if(error) alert('No se pudo eliminar: ' + error.message);
+      else loadSolicitudes();
+    });
+  });
+  el.querySelectorAll('.guardar-presupuesto-btn').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const id = e.target.dataset.id;
+      const form = e.target.closest('.presupuesto-form');
+      const monto = form.querySelector('.pres-monto').value;
+      const comentario = form.querySelector('.pres-comentario').value;
+      if(!monto){ alert('Escribe un importe.'); return; }
+      const { error } = await supabase.from('solicitudes').update({
+        presupuesto_monto: Number(monto), presupuesto_comentario: comentario, estado: 'presupuestada'
+      }).eq('id', id);
+      if(error) alert('No se pudo guardar: ' + error.message);
+      else loadSolicitudes();
+    });
+  });
+  el.querySelectorAll('.marcar-contactado-btn').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const id = e.target.dataset.id;
+      const { error } = await supabase.from('solicitudes').update({ estado:'contactado' }).eq('id', id);
+      if(error) alert('Error: ' + error.message); else loadSolicitudes();
+    });
+  });
+  el.querySelectorAll('.cerrar-btn').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const id = e.target.dataset.id;
+      const { error } = await supabase.from('solicitudes').update({ estado:'cerrada', cerrado_en: new Date().toISOString() }).eq('id', id);
+      if(error) alert('Error: ' + error.message); else loadSolicitudes();
+    });
+  });
+}
+
+// ---------- usuarios (admin) ----------
+async function loadUsuarios(){
+  const { data, error } = await supabase.from('profiles').select('*').order('creado_en', { ascending:false });
+  const body = $('usersTableBody');
+  if(error){ body.innerHTML = `<tr><td colspan="4">Error: ${error.message}</td></tr>`; return; }
+  body.innerHTML = '';
+  (data||[]).forEach(u=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${u.nombre}</td>
+      <td>${u.email}</td>
+      <td>
+        <select class="rol-select" data-id="${u.id}">
+          <option value="tecnico" ${u.rol==='tecnico'?'selected':''}>Técnico</option>
+          <option value="jefe" ${u.rol==='jefe'?'selected':''}>Jefe</option>
+          <option value="admin" ${u.rol==='admin'?'selected':''}>Admin</option>
+        </select>
+      </td>
+      <td><button class="toggle-activo ${u.activo?'on':'off'}" data-id="${u.id}" data-activo="${u.activo}">${u.activo?'Activo':'Inactivo'}</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('.rol-select').forEach(sel=>{
+    sel.addEventListener('change', async (e)=>{
+      const { error } = await supabase.from('profiles').update({ rol: e.target.value }).eq('id', e.target.dataset.id);
+      if(error) alert('No se pudo cambiar el rol: ' + error.message);
+    });
+  });
+  body.querySelectorAll('.toggle-activo').forEach(btn=>{
+    btn.addEventListener('click', async (e)=>{
+      const nuevo = !(e.target.dataset.activo === 'true');
+      const { error } = await supabase.from('profiles').update({ activo: nuevo }).eq('id', e.target.dataset.id);
+      if(error) alert('No se pudo actualizar: ' + error.message);
+      else loadUsuarios();
+    });
+  });
+}
+
+// ---------- notificaciones ----------
+async function loadNotificaciones(){
+  const { data } = await supabase.from('notificaciones').select('*').eq('usuario_id', me.id).eq('leida', false).order('creado_en', { ascending:false });
+  const bell = $('bellBtn');
+  const panel = $('notifPanel');
+  bell.classList.toggle('has-unread', (data||[]).length > 0);
+  if(!data || !data.length){
+    panel.innerHTML = `<div class="notif-empty">No tienes notificaciones nuevas.</div>`;
+    return;
+  }
+  panel.innerHTML = data.map(n=>`
+    <div class="notif-item" data-id="${n.id}">
+      ${n.mensaje}
+      <div class="t">${new Date(n.creado_en).toLocaleString('es-ES')}</div>
+    </div>
+  `).join('');
+  panel.querySelectorAll('.notif-item').forEach(item=>{
+    item.addEventListener('click', async ()=>{
+      await supabase.from('notificaciones').update({ leida:true }).eq('id', item.dataset.id);
+      loadNotificaciones();
+    });
+  });
+}
+$('bellBtn').addEventListener('click', ()=>{ $('notifPanel').classList.toggle('open'); });
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('.notif-panel') && !e.target.closest('.bell')) $('notifPanel').classList.remove('open');
+});
+
+// ---------- realtime ----------
+supabase.channel('solicitudes-changes')
+  .on('postgres_changes', { event:'*', schema:'public', table:'solicitudes' }, ()=>{ if(currentTab==='solicitudes') loadSolicitudes(); })
+  .subscribe();
+
+supabase.channel('notif-' + me.id)
+  .on('postgres_changes', { event:'INSERT', schema:'public', table:'notificaciones', filter:`usuario_id=eq.${me.id}` }, ()=>{ loadNotificaciones(); })
+  .subscribe();
+
+// ---------- init ----------
+loadSolicitudes();
+loadNotificaciones();
+</script>
+</body>
+</html>
