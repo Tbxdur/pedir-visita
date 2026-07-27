@@ -116,6 +116,9 @@
   .users-table th{background:var(--paper);text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;color:var(--steel);padding:10px 12px;}
   .users-table td{padding:10px 12px;font-size:.85rem;border-top:1px solid var(--paper-dark);}
   .users-table select{border:1.5px solid var(--paper-dark);border-radius:6px;padding:5px 7px;font-size:.8rem;}
+  .users-table .nombre-input{border:1.5px solid transparent;background:transparent;border-radius:6px;padding:5px 7px;font-size:.85rem;font-family:'Inter',sans-serif;color:var(--ink);width:100%;}
+  .users-table .nombre-input:hover{border-color:var(--paper-dark);}
+  .users-table .nombre-input:focus{outline:none;border-color:var(--amber-dark);background:var(--paper);}
   .toggle-activo{cursor:pointer;font-weight:700;font-size:.78rem;padding:4px 10px;border-radius:12px;border:none;}
   .toggle-activo.on{background:#e6eee6;color:var(--pine);}
   .toggle-activo.off{background:#f3e3e0;color:var(--rust);}
@@ -173,7 +176,7 @@
 
     <div id="tabUsuarios" hidden>
       <div class="new-user-hint">
-        <b>Para dar de alta a un técnico o jefe:</b> ve a tu proyecto de Supabase → Authentication → Users → "Add user", crea la cuenta con su email y una contraseña temporal. Aparecerá aquí abajo automáticamente con rol "tecnico" — cámbiaselo si corresponde.
+        <b>Para dar de alta a un técnico o jefe:</b> ve a tu proyecto de Supabase → Authentication → Users → "Add user", crea la cuenta con su email y una contraseña temporal. Aparecerá aquí abajo automáticamente con rol "tecnico" — cámbiale el nombre y el rol directamente en esta tabla si corresponde.
       </div>
       <table class="users-table">
         <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Activo</th></tr></thead>
@@ -446,7 +449,7 @@ async function loadUsuarios(){
   (data||[]).forEach(u=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${u.nombre}</td>
+      <td><input type="text" class="nombre-input" data-id="${u.id}" data-original="${u.nombre}" value="${u.nombre}"></td>
       <td>${u.email}</td>
       <td>
         <select class="rol-select" data-id="${u.id}">
@@ -458,6 +461,15 @@ async function loadUsuarios(){
       <td><button class="toggle-activo ${u.activo?'on':'off'}" data-id="${u.id}" data-activo="${u.activo}">${u.activo?'Activo':'Inactivo'}</button></td>
     `;
     body.appendChild(tr);
+  });
+  body.querySelectorAll('.nombre-input').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const nuevo = e.target.value.trim();
+      if(!nuevo){ e.target.value = e.target.dataset.original; return; }
+      const { error } = await supabase.from('profiles').update({ nombre: nuevo }).eq('id', e.target.dataset.id);
+      if(error){ alert('No se pudo guardar el nombre: ' + error.message); e.target.value = e.target.dataset.original; }
+      else e.target.dataset.original = nuevo;
+    });
   });
   body.querySelectorAll('.rol-select').forEach(sel=>{
     sel.addEventListener('change', async (e)=>{
