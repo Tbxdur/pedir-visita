@@ -181,6 +181,7 @@
           <option value="cerrada">Cerrada</option>
         </select>
         <select id="tecnicoFilter"><option value="">Todos los técnicos</option></select>
+        <button id="exportBtn" class="btn btn-ghost">⬇ Excel</button>
       </div>
       <div id="solicitudesList"></div>
     </div>
@@ -199,6 +200,7 @@
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import * as XLSX from 'https://esm.sh/xlsx@0.18.5';
 
 const SUPABASE_URL = 'https://pxknaepakigpxymvtmct.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_HII4AujHp7KMr27zLS3_Gw_kaM7jhB4';
@@ -211,6 +213,7 @@ const ESTADO_LABEL = { pendiente:'Pendiente', presupuestado:'Presupuestado', esp
 let me = null;      // { id, nombre, rol, email }
 let tecnicos = [];  // for jefe/admin assign dropdown
 let currentTab = 'solicitudes';
+let lastSolicitudes = []; // última lista cargada (respeta filtros), para exportar a Excel
 
 // ---------- auth guard ----------
 const { data: { session } } = await supabase.auth.getSession();
@@ -265,6 +268,7 @@ if(isStaffView){
   $('searchInput').addEventListener('input', debounce(loadSolicitudes, 300));
   $('estadoFilter').addEventListener('change', loadSolicitudes);
   $('tecnicoFilter').addEventListener('change', loadSolicitudes);
+  $('exportBtn').addEventListener('click', exportarExcel);
 }
 
 function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
@@ -285,6 +289,7 @@ async function loadSolicitudes(){
   }
 
   const { data, error } = await query;
+  lastSolicitudes = data || [];
   $('loadingBox').hidden = true;
   $('tabSolicitudes').hidden = false;
 
@@ -314,6 +319,40 @@ function renderStats(list){
     <div class="stat-card"><div class="n">${totalCerrado.toFixed(0)}€</div><div class="l">Facturado</div></div>
     <div class="stat-card"><div class="n">${totalHoras.toFixed(1)}h</div><div class="l">Horas registradas</div></div>
   `;
+}
+
+function exportarExcel(){
+  if(!lastSolicitudes.length){ alert('No hay solicitudes que exportar con los filtros actuales.'); return; }
+  const tecnicoNombre = id => id ? (tecnicos.find(t=>t.id===id)?.nombre || 'Técnico inactivo/eliminado') : 'Sin asignar';
+
+  const filas = lastSolicitudes.map(s => ({
+    'Nº Orden': s.numero_orden,
+    'Estado': ESTADO_LABEL[s.estado] || s.estado,
+    'Problema': s.problema,
+    'Cliente': s.nombre_cliente,
+    'Teléfono': s.telefono,
+    'Dirección': s.direccion || '',
+    'Población': s.poblacion || '',
+    'Técnico asignado': tecnicoNombre(s.tecnico_id),
+    'Presupuesto (€)': s.presupuesto_monto ?? '',
+    'Horas dedicadas': s.horas_dedicadas ?? '',
+    'Comentario': s.comentario || '',
+    'Descripción': s.descripcion || '',
+    'Fecha visita': s.fecha_visita ? new Date(s.fecha_visita) : '',
+    'Creado': s.creado_en ? new Date(s.creado_en) : '',
+    'Cerrado': s.cerrado_en ? new Date(s.cerrado_en) : ''
+  }));
+
+  const hoja = XLSX.utils.json_to_sheet(filas, { cellDates: true });
+  hoja['!cols'] = [
+    {wch:14},{wch:16},{wch:14},{wch:22},{wch:14},{wch:24},{wch:14},
+    {wch:20},{wch:14},{wch:14},{wch:30},{wch:30},{wch:16},{wch:16},{wch:16}
+  ];
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, 'Solicitudes');
+
+  const fecha = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(libro, `solicitudes-${fecha}.xlsx`);
 }
 
 function fmtFecha(iso){
