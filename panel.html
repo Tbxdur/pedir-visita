@@ -136,6 +136,12 @@
   .toggle-activo.off{background:#f3e3e0;color:var(--rust);}
   .new-user-hint{background:var(--white);border:1.5px solid var(--amber-dark);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:.85rem;line-height:1.5;}
   .new-user-hint b{font-family:'Oswald',sans-serif;}
+  .new-user-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+  .new-user-form input, .new-user-form select{
+    border:1.5px solid var(--paper-dark);border-radius:8px;padding:9px 11px;font-family:'Inter',sans-serif;
+    font-size:.85rem;background:var(--white);color:var(--ink);
+  }
+  .new-user-form input{flex:1;min-width:160px;}
 
   .loading{text-align:center;color:var(--steel);padding:40px;font-size:.9rem;}
 </style>
@@ -163,6 +169,7 @@
 
   <div class="tabs" id="tabs" hidden>
     <button class="tab-btn active" data-tab="solicitudes" id="tabSolicitudesBtn">Solicitudes</button>
+    <button class="tab-btn" data-tab="nuevoUsuario" id="tabNuevoUsuarioBtn" hidden>Nuevo usuario</button>
     <button class="tab-btn" data-tab="usuarios" id="tabUsuariosBtn" hidden>Usuarios</button>
   </div>
 
@@ -194,10 +201,22 @@
       <div id="solicitudesList"></div>
     </div>
 
-    <div id="tabUsuarios" hidden>
+    <div id="tabNuevoUsuario" hidden>
       <div class="new-user-hint">
-        <b>Para dar de alta a un técnico o jefe:</b> ve a tu proyecto de Supabase → Authentication → Users → "Add user", crea la cuenta con su email y una contraseña temporal. Aparecerá aquí abajo automáticamente — ponle el <b>nombre y apellido completo</b> (es lo que verás al asignar solicitudes) y ajusta el rol si corresponde.
+        <b>Nuevo técnico o jefe:</b> rellena el formulario y pulsa "Crear usuario". Se generará una contraseña temporal — compártela con la persona (por ejemplo por WhatsApp) para que pueda entrar en <b>login.html</b>. Luego puede cambiarla con "¿Olvidaste tu contraseña?".
       </div>
+      <form id="nuevoUsuarioForm" class="new-user-form">
+        <input type="text" id="nuNombre" placeholder="Nombre y apellido" required>
+        <input type="email" id="nuEmail" placeholder="Email" required>
+        <select id="nuRol" required>
+          <option value="tecnico">Técnico</option>
+          <option value="jefe">Jefe</option>
+        </select>
+        <button type="submit" class="btn btn-amber">Crear usuario</button>
+      </form>
+    </div>
+
+    <div id="tabUsuarios" hidden>
       <table class="users-table">
         <thead><tr><th>Nombre y apellido</th><th>Email</th><th>Rol</th><th>Activo</th></tr></thead>
         <tbody id="usersTableBody"></tbody>
@@ -246,20 +265,57 @@ $('logoutBtn').onclick = async ()=>{ await supabase.auth.signOut(); window.locat
 
 const isStaffView = (me.rol === 'admin' || me.rol === 'jefe');
 
-if(me.rol === 'admin'){
+if(me.rol === 'admin' || me.rol === 'jefe'){
   $('tabs').hidden = false;
+  $('tabNuevoUsuarioBtn').hidden = false;
   $('tabUsuariosBtn').hidden = false;
+  $('tabNuevoUsuarioBtn').onclick = ()=> switchTab('nuevoUsuario');
   $('tabUsuariosBtn').onclick = ()=> switchTab('usuarios');
   $('tabSolicitudesBtn').onclick = ()=> switchTab('solicitudes');
-} else if(me.rol === 'jefe'){
-  $('tabs').hidden = false;
+  if(me.rol === 'admin'){
+    const opt = document.createElement('option');
+    opt.value = 'admin'; opt.textContent = 'Admin';
+    $('nuRol').appendChild(opt);
+  }
+}
+
+// ---------- crear usuario (admin y jefe) ----------
+const nuevoUsuarioForm = $('nuevoUsuarioForm');
+if(nuevoUsuarioForm){
+  nuevoUsuarioForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const nombre = $('nuNombre').value.trim();
+    const email = $('nuEmail').value.trim();
+    const rol = $('nuRol').value;
+    if(!nombre || !email || !rol) return;
+    const btn = nuevoUsuarioForm.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Creando...';
+    try{
+      const { data, error } = await supabase.functions.invoke('crear-usuario', { body:{ nombre, email, rol } });
+      if(error){
+        let msg = error.message;
+        try{ const body = await error.context.json(); if(body?.error) msg = body.error; }catch(_){}
+        throw new Error(msg);
+      }
+      if(!data?.ok) throw new Error(data?.error || 'Error desconocido.');
+      alert(`Usuario creado ✅\n\nEmail: ${email}\nContraseña temporal: ${data.password}\n\nCompártesela para que pueda entrar en login.html.`);
+      nuevoUsuarioForm.reset();
+      loadUsuarios();
+    }catch(err){
+      alert('No se pudo crear el usuario: ' + err.message);
+    }finally{
+      btn.disabled = false; btn.textContent = 'Crear usuario';
+    }
+  });
 }
 
 function switchTab(tab){
   currentTab = tab;
   $('tabSolicitudes').hidden = tab !== 'solicitudes';
+  $('tabNuevoUsuario').hidden = tab !== 'nuevoUsuario';
   $('tabUsuarios').hidden = tab !== 'usuarios';
   $('tabSolicitudesBtn').classList.toggle('active', tab==='solicitudes');
+  $('tabNuevoUsuarioBtn').classList.toggle('active', tab==='nuevoUsuario');
   $('tabUsuariosBtn').classList.toggle('active', tab==='usuarios');
   if(tab==='usuarios') loadUsuarios();
 }
@@ -533,16 +589,30 @@ async function loadUsuarios(){
   if(error){ body.innerHTML = `<tr><td colspan="4">Error: ${error.message}</td></tr>`; return; }
   body.innerHTML = '';
   (data||[]).forEach(u=>{
+    const esAdminRow = u.rol === 'admin';
+    // un jefe no puede tocar cuentas admin (ni verlas editables); el admin puede con todo
+    const puedoGestionar = me.rol === 'admin' || (me.rol === 'jefe' && !esAdminRow);
     const tr = document.createElement('tr');
+    if(!puedoGestionar){
+      tr.innerHTML = `
+        <td>${u.nombre}</td>
+        <td>${u.email}</td>
+        <td>Admin</td>
+        <td>${u.activo?'Activo':'Inactivo'}</td>
+      `;
+      body.appendChild(tr);
+      return;
+    }
+    const rolOptions = `
+      <option value="tecnico" ${u.rol==='tecnico'?'selected':''}>Técnico</option>
+      <option value="jefe" ${u.rol==='jefe'?'selected':''}>Jefe</option>
+      ${me.rol==='admin' ? `<option value="admin" ${u.rol==='admin'?'selected':''}>Admin</option>` : ''}
+    `;
     tr.innerHTML = `
       <td><input type="text" class="nombre-input" data-id="${u.id}" data-original="${u.nombre}" value="${u.nombre}"></td>
       <td>${u.email}</td>
       <td>
-        <select class="rol-select" data-id="${u.id}">
-          <option value="tecnico" ${u.rol==='tecnico'?'selected':''}>Técnico</option>
-          <option value="jefe" ${u.rol==='jefe'?'selected':''}>Jefe</option>
-          <option value="admin" ${u.rol==='admin'?'selected':''}>Admin</option>
-        </select>
+        <select class="rol-select" data-id="${u.id}">${rolOptions}</select>
       </td>
       <td><button class="toggle-activo ${u.activo?'on':'off'}" data-id="${u.id}" data-activo="${u.activo}">${u.activo?'Activo':'Inactivo'}</button></td>
     `;
@@ -561,6 +631,7 @@ async function loadUsuarios(){
     sel.addEventListener('change', async (e)=>{
       const { error } = await supabase.from('profiles').update({ rol: e.target.value }).eq('id', e.target.dataset.id);
       if(error) alert('No se pudo cambiar el rol: ' + error.message);
+      else loadUsuarios();
     });
   });
   body.querySelectorAll('.toggle-activo').forEach(btn=>{
