@@ -436,7 +436,7 @@ function switchTab(tab){
 if(isStaffView){
   $('statsRow').hidden = false;
   $('filtersRow').hidden = false;
-  const { data: tecs } = await supabase.from('profiles').select('id,nombre,apellido').eq('rol','tecnico').eq('activo', true);
+  const { data: tecs } = await supabase.from('profiles').select('id,nombre,apellido').in('rol', ['tecnico','jefe']).eq('activo', true);
   tecnicos = tecs || [];
   const sel = $('tecnicoFilter');
   tecnicos.forEach(t=>{
@@ -565,6 +565,10 @@ function renderSolicitudes(list){
 
     let actionsHtml = '';
 
+    // si la solicitud está asignada al propio jefe, gestiona su trabajo con
+    // el mismo panel que un técnico, en vez del bloque de solo lectura
+    const esGestionPropia = (me.rol === 'tecnico' || me.rol === 'jefe') && s.tecnico_id === me.id;
+
     if(isStaffView){
       const tecnicoOptions = tecnicos.map(t=>`<option value="${t.id}" ${s.tecnico_id===t.id?'selected':''}>${nombreCompleto(t)}</option>`).join('');
       actionsHtml += `
@@ -572,22 +576,24 @@ function renderSolicitudes(list){
           <option value="">Sin asignar</option>
           ${tecnicoOptions}
         </select>`;
-      actionsHtml += `
-        <select class="estado-select" data-id="${s.id}">
-          <option value="pendiente" ${s.estado==='pendiente'?'selected':''}>Pendiente</option>
-          <option value="presupuestado" ${s.estado==='presupuestado'?'selected':''}>Presupuestado</option>
-          <option value="esperando_respuesta" ${s.estado==='esperando_respuesta'?'selected':''}>Esperando respuesta</option>
-          <option value="cerrada" ${s.estado==='cerrada'?'selected':''}>Cerrada</option>
-        </select>`;
       if(me.rol === 'admin'){
         actionsHtml += `<button class="btn btn-rust delete-btn" data-id="${s.id}">Eliminar</button>`;
       }
-      if(s.presupuesto_monto || s.comentario){
-        actionsHtml += `<div class="presupuesto-view">${s.presupuesto_monto?`<b>${Number(s.presupuesto_monto).toFixed(2)}€</b> — `:''}${s.comentario||'sin comentario'}${s.horas_dedicadas?` · ${s.horas_dedicadas}h dedicadas`:''}</div>`;
+      if(!esGestionPropia){
+        actionsHtml += `
+          <select class="estado-select" data-id="${s.id}">
+            <option value="pendiente" ${s.estado==='pendiente'?'selected':''}>Pendiente</option>
+            <option value="presupuestado" ${s.estado==='presupuestado'?'selected':''}>Presupuestado</option>
+            <option value="esperando_respuesta" ${s.estado==='esperando_respuesta'?'selected':''}>Esperando respuesta</option>
+            <option value="cerrada" ${s.estado==='cerrada'?'selected':''}>Cerrada</option>
+          </select>`;
+        if(s.presupuesto_monto || s.comentario){
+          actionsHtml += `<div class="presupuesto-view">${s.presupuesto_monto?`<b>${Number(s.presupuesto_monto).toFixed(2)}€</b> — `:''}${s.comentario||'sin comentario'}${s.horas_dedicadas?` · ${s.horas_dedicadas}h dedicadas`:''}</div>`;
+        }
       }
     }
 
-    if(me.rol === 'tecnico' && s.tecnico_id === me.id){
+    if(esGestionPropia){
       if(s.estado !== 'cerrada'){
         actionsHtml += `
           <div class="gestion-panel" data-id="${s.id}">
