@@ -185,8 +185,12 @@
     <div class="modal-box">
       <h2>Mi perfil</h2>
       <div class="modal-field">
-        <label>Nombre y apellido</label>
+        <label>Nombre</label>
         <input type="text" id="pfNombre">
+      </div>
+      <div class="modal-field">
+        <label>Apellido</label>
+        <input type="text" id="pfApellido">
       </div>
       <div class="modal-field">
         <label>Email</label>
@@ -252,7 +256,8 @@
         <b>Nuevo técnico o jefe:</b> rellena el formulario y pulsa "Crear usuario". Se generará una contraseña temporal — compártela con la persona (por ejemplo por WhatsApp) para que pueda entrar en <b>login.html</b>. Luego puede cambiarla con "¿Olvidaste tu contraseña?".
       </div>
       <form id="nuevoUsuarioForm" class="new-user-form">
-        <input type="text" id="nuNombre" placeholder="Nombre y apellido" required>
+        <input type="text" id="nuNombre" placeholder="Nombre" required>
+        <input type="text" id="nuApellido" placeholder="Apellido">
         <input type="email" id="nuEmail" placeholder="Email" required>
         <select id="nuRol" required>
           <option value="tecnico">Técnico</option>
@@ -264,7 +269,7 @@
 
     <div id="tabUsuarios" hidden>
       <table class="users-table">
-        <thead><tr><th>Nombre y apellido</th><th>Email</th><th>Rol</th><th>Activo</th></tr></thead>
+        <thead><tr><th>Nombre</th><th>Apellido</th><th>Email</th><th>Rol</th><th>Activo</th></tr></thead>
         <tbody id="usersTableBody"></tbody>
       </table>
     </div>
@@ -280,6 +285,7 @@ const SUPABASE_KEY = 'sb_publishable_HII4AujHp7KMr27zLS3_Gw_kaM7jhB4';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function $(id){ return document.getElementById(id); }
+function nombreCompleto(p){ return [p?.nombre, p?.apellido].filter(Boolean).join(' '); }
 const ESTADOS = ['pendiente','presupuestado','esperando_respuesta','cerrada'];
 const ESTADO_LABEL = { pendiente:'Pendiente', presupuestado:'Presupuestado', esperando_respuesta:'Esperando respuesta', cerrada:'Cerrada' };
 
@@ -296,7 +302,7 @@ if(!session){
 }
 
 const { data: profile, error: profErr } = await supabase
-  .from('profiles').select('id,nombre,rol,email,activo,telefono').eq('id', session.user.id).single();
+  .from('profiles').select('id,nombre,apellido,rol,email,activo,telefono').eq('id', session.user.id).single();
 
 if(profErr || !profile || !profile.activo){
   await supabase.auth.signOut();
@@ -305,7 +311,7 @@ if(profErr || !profile || !profile.activo){
 }
 me = profile;
 
-$('whoNombre').textContent = me.nombre;
+$('whoNombre').textContent = nombreCompleto(me);
 $('whoRol').textContent = me.rol;
 $('logoutBtn').onclick = async ()=>{ await supabase.auth.signOut(); window.location.href = 'login.html'; };
 
@@ -313,6 +319,7 @@ $('logoutBtn').onclick = async ()=>{ await supabase.auth.signOut(); window.locat
 const profileModal = $('profileModal');
 $('profileBtn').addEventListener('click', ()=>{
   $('pfNombre').value = me.nombre || '';
+  $('pfApellido').value = me.apellido || '';
   $('pfEmail').value = me.email || '';
   $('pfTelefono').value = me.telefono || '';
   $('pfPassword').value = '';
@@ -324,6 +331,7 @@ profileModal.addEventListener('click', (e)=>{ if(e.target === profileModal) prof
 
 $('profileSaveBtn').addEventListener('click', async ()=>{
   const nombre = $('pfNombre').value.trim();
+  const apellido = $('pfApellido').value.trim();
   const email = $('pfEmail').value.trim();
   const telefono = $('pfTelefono').value.trim();
   const pass1 = $('pfPassword').value;
@@ -339,7 +347,7 @@ $('profileSaveBtn').addEventListener('click', async ()=>{
   const btn = $('profileSaveBtn');
   btn.disabled = true; btn.textContent = 'Guardando...';
   try{
-    const { error: profError } = await supabase.from('profiles').update({ nombre, telefono }).eq('id', me.id);
+    const { error: profError } = await supabase.from('profiles').update({ nombre, apellido, telefono }).eq('id', me.id);
     if(profError) throw new Error('No se pudo guardar el perfil: ' + profError.message);
 
     if(emailCambio){
@@ -353,9 +361,9 @@ $('profileSaveBtn').addEventListener('click', async ()=>{
       if(passError) throw new Error('No se pudo cambiar la contraseña: ' + passError.message);
     }
 
-    me.nombre = nombre; me.telefono = telefono;
+    me.nombre = nombre; me.apellido = apellido; me.telefono = telefono;
     if(emailCambio) me.email = email;
-    $('whoNombre').textContent = me.nombre;
+    $('whoNombre').textContent = nombreCompleto(me);
     alert(emailCambio
       ? 'Perfil actualizado. Revisa el correo del nuevo email para confirmar el cambio.'
       : 'Perfil actualizado.');
@@ -389,13 +397,14 @@ if(nuevoUsuarioForm){
   nuevoUsuarioForm.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const nombre = $('nuNombre').value.trim();
+    const apellido = $('nuApellido').value.trim();
     const email = $('nuEmail').value.trim();
     const rol = $('nuRol').value;
     if(!nombre || !email || !rol) return;
     const btn = nuevoUsuarioForm.querySelector('button[type=submit]');
     btn.disabled = true; btn.textContent = 'Creando...';
     try{
-      const { data, error } = await supabase.functions.invoke('crear-usuario', { body:{ nombre, email, rol } });
+      const { data, error } = await supabase.functions.invoke('crear-usuario', { body:{ nombre, apellido, email, rol } });
       if(error){
         let msg = error.message;
         try{ const body = await error.context.json(); if(body?.error) msg = body.error; }catch(_){}
@@ -427,11 +436,11 @@ function switchTab(tab){
 if(isStaffView){
   $('statsRow').hidden = false;
   $('filtersRow').hidden = false;
-  const { data: tecs } = await supabase.from('profiles').select('id,nombre').eq('rol','tecnico').eq('activo', true);
+  const { data: tecs } = await supabase.from('profiles').select('id,nombre,apellido').eq('rol','tecnico').eq('activo', true);
   tecnicos = tecs || [];
   const sel = $('tecnicoFilter');
   tecnicos.forEach(t=>{
-    const o = document.createElement('option'); o.value = t.id; o.textContent = t.nombre; sel.appendChild(o);
+    const o = document.createElement('option'); o.value = t.id; o.textContent = nombreCompleto(t); sel.appendChild(o);
   });
   $('searchInput').addEventListener('input', debounce(loadSolicitudes, 300));
   $('estadoFilter').addEventListener('change', loadSolicitudes);
@@ -494,7 +503,7 @@ function renderStats(list){
 
 function exportarExcel(){
   if(!lastSolicitudes.length){ alert('No hay solicitudes que exportar con los filtros actuales.'); return; }
-  const tecnicoNombre = id => id ? (tecnicos.find(t=>t.id===id)?.nombre || 'Técnico inactivo/eliminado') : 'Sin asignar';
+  const tecnicoNombre = id => id ? (nombreCompleto(tecnicos.find(t=>t.id===id) || {}) || 'Técnico inactivo/eliminado') : 'Sin asignar';
 
   const filas = lastSolicitudes.map(s => ({
     'Nº Orden': s.numero_orden,
@@ -557,7 +566,7 @@ function renderSolicitudes(list){
     let actionsHtml = '';
 
     if(isStaffView){
-      const tecnicoOptions = tecnicos.map(t=>`<option value="${t.id}" ${s.tecnico_id===t.id?'selected':''}>${t.nombre}</option>`).join('');
+      const tecnicoOptions = tecnicos.map(t=>`<option value="${t.id}" ${s.tecnico_id===t.id?'selected':''}>${nombreCompleto(t)}</option>`).join('');
       actionsHtml += `
         <select class="assign-select" data-id="${s.id}">
           <option value="">Sin asignar</option>
@@ -690,7 +699,7 @@ function renderSolicitudes(list){
 async function loadUsuarios(){
   const { data, error } = await supabase.from('profiles').select('*').order('creado_en', { ascending:false });
   const body = $('usersTableBody');
-  if(error){ body.innerHTML = `<tr><td colspan="4">Error: ${error.message}</td></tr>`; return; }
+  if(error){ body.innerHTML = `<tr><td colspan="5">Error: ${error.message}</td></tr>`; return; }
   body.innerHTML = '';
   (data||[]).forEach(u=>{
     const esAdminRow = u.rol === 'admin';
@@ -699,7 +708,8 @@ async function loadUsuarios(){
     const tr = document.createElement('tr');
     if(!puedoGestionar){
       tr.innerHTML = `
-        <td>${u.nombre}</td>
+        <td>${u.nombre||''}</td>
+        <td>${u.apellido||''}</td>
         <td>${u.email}</td>
         <td>Admin</td>
         <td>${u.activo?'Activo':'Inactivo'}</td>
@@ -713,7 +723,8 @@ async function loadUsuarios(){
       ${me.rol==='admin' ? `<option value="admin" ${u.rol==='admin'?'selected':''}>Admin</option>` : ''}
     `;
     tr.innerHTML = `
-      <td><input type="text" class="nombre-input" data-id="${u.id}" data-original="${u.nombre}" value="${u.nombre}"></td>
+      <td><input type="text" class="nombre-input" data-id="${u.id}" data-original="${u.nombre||''}" value="${u.nombre||''}"></td>
+      <td><input type="text" class="apellido-input" data-id="${u.id}" data-original="${u.apellido||''}" value="${u.apellido||''}"></td>
       <td>${u.email}</td>
       <td>
         <select class="rol-select" data-id="${u.id}">${rolOptions}</select>
@@ -728,6 +739,14 @@ async function loadUsuarios(){
       if(!nuevo){ e.target.value = e.target.dataset.original; return; }
       const { error } = await supabase.from('profiles').update({ nombre: nuevo }).eq('id', e.target.dataset.id);
       if(error){ alert('No se pudo guardar el nombre: ' + error.message); e.target.value = e.target.dataset.original; }
+      else e.target.dataset.original = nuevo;
+    });
+  });
+  body.querySelectorAll('.apellido-input').forEach(inp=>{
+    inp.addEventListener('change', async (e)=>{
+      const nuevo = e.target.value.trim();
+      const { error } = await supabase.from('profiles').update({ apellido: nuevo }).eq('id', e.target.dataset.id);
+      if(error){ alert('No se pudo guardar el apellido: ' + error.message); e.target.value = e.target.dataset.original; }
       else e.target.dataset.original = nuevo;
     });
   });
