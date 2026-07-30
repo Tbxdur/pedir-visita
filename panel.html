@@ -143,6 +143,19 @@
   }
   .new-user-form input{flex:1;min-width:160px;}
 
+  .profile-btn{background:transparent;border:1.5px solid #4a4f57;color:#c9cdd3;font-size:.75rem;padding:7px 11px;border-radius:7px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .profile-btn:hover{border-color:var(--amber);color:var(--amber);}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(35,38,43,.55);z-index:60;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal-box{background:var(--white);border-radius:12px;padding:22px 20px;max-width:380px;width:100%;max-height:85vh;overflow:auto;}
+  .modal-box h2{font-family:'Oswald',sans-serif;font-size:1.05rem;margin:0 0 16px;}
+  .modal-field{margin-bottom:12px;}
+  .modal-field label{display:block;font-size:.78rem;color:var(--steel);margin-bottom:5px;font-weight:600;}
+  .modal-field input{width:100%;border:1.5px solid var(--paper-dark);border-radius:8px;padding:10px 12px;font-family:'Inter',sans-serif;font-size:.9rem;background:var(--paper);color:var(--ink);}
+  .modal-hint{font-size:.74rem;color:var(--steel);margin-top:5px;line-height:1.4;}
+  .modal-sep{border:none;border-top:1.5px dashed var(--paper-dark);margin:16px 0;}
+  .modal-actions{display:flex;gap:8px;margin-top:6px;justify-content:flex-end;}
+
   .loading{text-align:center;color:var(--steel);padding:40px;font-size:.9rem;}
 </style>
 </head>
@@ -162,10 +175,43 @@
         <div class="nombre" id="whoNombre">—</div>
         <div class="rol" id="whoRol">—</div>
       </div>
+      <button class="profile-btn" id="profileBtn">👤 Perfil</button>
       <button class="logout-btn" id="logoutBtn">Salir</button>
     </div>
   </div>
   <div class="notif-panel" id="notifPanel"></div>
+
+  <div class="modal-overlay" id="profileModal">
+    <div class="modal-box">
+      <h2>Mi perfil</h2>
+      <div class="modal-field">
+        <label>Nombre y apellido</label>
+        <input type="text" id="pfNombre">
+      </div>
+      <div class="modal-field">
+        <label>Email</label>
+        <input type="email" id="pfEmail">
+        <div class="modal-hint">Si lo cambias, te llegará un correo al nuevo email para confirmarlo antes de que se active.</div>
+      </div>
+      <div class="modal-field">
+        <label>Teléfono móvil</label>
+        <input type="tel" id="pfTelefono" placeholder="600 000 000">
+      </div>
+      <hr class="modal-sep">
+      <div class="modal-field">
+        <label>Nueva contraseña</label>
+        <input type="password" id="pfPassword" placeholder="Déjalo en blanco para no cambiarla">
+      </div>
+      <div class="modal-field">
+        <label>Confirmar nueva contraseña</label>
+        <input type="password" id="pfPassword2">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="profileCancelBtn" type="button">Cancelar</button>
+        <button class="btn btn-amber" id="profileSaveBtn" type="button">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
 
   <div class="tabs" id="tabs" hidden>
     <button class="tab-btn active" data-tab="solicitudes" id="tabSolicitudesBtn">Solicitudes</button>
@@ -250,7 +296,7 @@ if(!session){
 }
 
 const { data: profile, error: profErr } = await supabase
-  .from('profiles').select('id,nombre,rol,email,activo').eq('id', session.user.id).single();
+  .from('profiles').select('id,nombre,rol,email,activo,telefono').eq('id', session.user.id).single();
 
 if(profErr || !profile || !profile.activo){
   await supabase.auth.signOut();
@@ -262,6 +308,64 @@ me = profile;
 $('whoNombre').textContent = me.nombre;
 $('whoRol').textContent = me.rol;
 $('logoutBtn').onclick = async ()=>{ await supabase.auth.signOut(); window.location.href = 'login.html'; };
+
+// ---------- mi perfil (todos los roles) ----------
+const profileModal = $('profileModal');
+$('profileBtn').addEventListener('click', ()=>{
+  $('pfNombre').value = me.nombre || '';
+  $('pfEmail').value = me.email || '';
+  $('pfTelefono').value = me.telefono || '';
+  $('pfPassword').value = '';
+  $('pfPassword2').value = '';
+  profileModal.classList.add('open');
+});
+$('profileCancelBtn').addEventListener('click', ()=> profileModal.classList.remove('open'));
+profileModal.addEventListener('click', (e)=>{ if(e.target === profileModal) profileModal.classList.remove('open'); });
+
+$('profileSaveBtn').addEventListener('click', async ()=>{
+  const nombre = $('pfNombre').value.trim();
+  const email = $('pfEmail').value.trim();
+  const telefono = $('pfTelefono').value.trim();
+  const pass1 = $('pfPassword').value;
+  const pass2 = $('pfPassword2').value;
+
+  if(!nombre || !email){ alert('El nombre y el email son obligatorios.'); return; }
+  if(pass1 || pass2){
+    if(pass1.length < 6){ alert('La contraseña debe tener al menos 6 caracteres.'); return; }
+    if(pass1 !== pass2){ alert('Las contraseñas no coinciden.'); return; }
+  }
+
+  const emailCambio = email !== me.email;
+  const btn = $('profileSaveBtn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try{
+    const { error: profError } = await supabase.from('profiles').update({ nombre, telefono }).eq('id', me.id);
+    if(profError) throw new Error('No se pudo guardar el perfil: ' + profError.message);
+
+    if(emailCambio){
+      const { error: emailError } = await supabase.auth.updateUser({ email });
+      if(emailError) throw new Error('No se pudo cambiar el email: ' + emailError.message);
+      await supabase.from('profiles').update({ email }).eq('id', me.id);
+    }
+
+    if(pass1){
+      const { error: passError } = await supabase.auth.updateUser({ password: pass1 });
+      if(passError) throw new Error('No se pudo cambiar la contraseña: ' + passError.message);
+    }
+
+    me.nombre = nombre; me.telefono = telefono;
+    if(emailCambio) me.email = email;
+    $('whoNombre').textContent = me.nombre;
+    alert(emailCambio
+      ? 'Perfil actualizado. Revisa el correo del nuevo email para confirmar el cambio.'
+      : 'Perfil actualizado.');
+    profileModal.classList.remove('open');
+  }catch(err){
+    alert(err.message);
+  }finally{
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+  }
+});
 
 const isStaffView = (me.rol === 'admin' || me.rol === 'jefe');
 
