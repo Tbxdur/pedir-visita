@@ -722,9 +722,17 @@ async function loadUsuarios(){
       <option value="jefe" ${u.rol==='jefe'?'selected':''}>Jefe</option>
       ${me.rol==='admin' ? `<option value="admin" ${u.rol==='admin'?'selected':''}>Admin</option>` : ''}
     `;
+    // solo el admin puede editar nombre/apellido de otra persona desde aquí;
+    // cada uno cambia los suyos propios desde "Mi perfil"
+    const nombreCell = me.rol === 'admin'
+      ? `<input type="text" class="nombre-input" data-id="${u.id}" data-original="${u.nombre||''}" value="${u.nombre||''}">`
+      : (u.nombre||'');
+    const apellidoCell = me.rol === 'admin'
+      ? `<input type="text" class="apellido-input" data-id="${u.id}" data-original="${u.apellido||''}" value="${u.apellido||''}">`
+      : (u.apellido||'');
     tr.innerHTML = `
-      <td><input type="text" class="nombre-input" data-id="${u.id}" data-original="${u.nombre||''}" value="${u.nombre||''}"></td>
-      <td><input type="text" class="apellido-input" data-id="${u.id}" data-original="${u.apellido||''}" value="${u.apellido||''}"></td>
+      <td>${nombreCell}</td>
+      <td>${apellidoCell}</td>
       <td>${u.email}</td>
       <td>
         <select class="rol-select" data-id="${u.id}">${rolOptions}</select>
